@@ -10,17 +10,21 @@ namespace rrs
     /// </summary>
     public class SocketPipeline : IPipeline
     {
-        private readonly NetworkStream stream;
+        private readonly Lazy<NetworkStream> stream;
         private readonly SocketPacket input;
+        private readonly Socket socket;
         private EventHandler interrupted;
         private int interrupting = 0;
         private string pipelineName;
 
-        public SocketPipeline(Socket socket, bool ownedSocket = true)
+        public SocketPipeline(Socket socket)
         {
+            if (socket == null) throw new ArgumentNullException(nameof(socket));
+
             pipelineName = socket.RemoteEndPoint + "=>" + socket.LocalEndPoint;
-            this.stream = new NetworkStream(socket, ownedSocket);
+            this.stream = new Lazy<NetworkStream>(() => new NetworkStream(socket));
             this.input = new SocketPacket(this);
+            this.socket = socket;
         }
 
         event EventHandler IPipeline.Interrupted
@@ -29,20 +33,26 @@ namespace rrs
             remove { interrupted -= value; }
         }
 
+        public Socket Socket { get { return socket; } }
+
         public void Interrupte()
         {
             if (Interlocked.Increment(ref interrupting) > 1) return; // 已在中止处理忽略
-            using (stream)
-            {
-                stream.Flush();
-                stream.Close();
 
-                if (interrupted != null)
+            if (!stream.IsValueCreated)
+            {
+                interrupted?.Invoke(this, EventArgs.Empty);
+            }
+            else
+            {
+                using (stream.Value)
                 {
-                    interrupted(this, EventArgs.Empty);
-                    interrupted = null;
+                    stream.Value.Flush();
+                    stream.Value.Close();
+                    interrupted?.Invoke(this, EventArgs.Empty);
                 }
             }
+            interrupted = null;
         }
 
         void IDisposable.Dispose() { Interrupte(); }
@@ -51,18 +61,18 @@ namespace rrs
         {
             if (!this.input.Disposed) throw new InvalidOperationException("input packet is not disposed.");
 
-            try { stream.BeginRead(((IPacket)input).Buffer, 0, SocketPacket.BufferSize, CompleteInput<TState>, new object[] { callback, state }); }
-            catch (IOException) { using (this) { } }
-            catch (ObjectDisposedException) { using (this) { } }
-            catch { using (this) { throw; } }
+            try { stream.Value.BeginRead(((IPacket)input).Buffer, 0, SocketPacket.BufferSize, CompleteInput<TState>, new object[] { callback, state }); }
+            catch (IOException) { Interrupte(); }
+            catch (ObjectDisposedException) { Interrupte(); }
+            catch { Interrupte(); throw; }
         }
 
         void CompleteInput<TState>(IAsyncResult asr)
         {
             try
             {
-                var size = stream.EndRead(asr);
-                if (size == 0) using (this) { }
+                var size = stream.Value.EndRead(asr);
+                if (size == 0) Interrupte();
                 else
                 {
                     input.SetSize(size);
@@ -80,22 +90,22 @@ namespace rrs
         {
             if (packet.Disposed) throw new InvalidOperationException("packet is disposed.");
 
-            try { stream.BeginWrite(packet.Buffer, 0, packet.Size, CompleteOutput<TState>, new object[] { callback, packet, state }); }
-            catch (IOException) { using (this) { } }
-            catch (ObjectDisposedException) { using (this) { } }
-            catch { using (this) { throw; } }
+            try { stream.Value.BeginWrite(packet.Buffer, 0, packet.Size, CompleteOutput<TState>, new object[] { callback, packet, state }); }
+            catch (IOException) { Interrupte(); }
+            catch (ObjectDisposedException) { Interrupte(); }
+            catch { Interrupte(); throw; }
         }
 
         void CompleteOutput<TState>(IAsyncResult asr)
         {
             try
             {
-                stream.EndWrite(asr);
+                stream.Value.EndWrite(asr);
                 var args = (object[])asr.AsyncState;
                 ((IOCompleteCallback<TState>)args[0])(this, (IPacket)args[1], (TState)args[2]);
             }
-            catch (ObjectDisposedException) { using (this) { } }
-            catch { using (this) { throw; } }
+            catch (ObjectDisposedException) { Interrupte(); }
+            catch { Interrupte(); throw; }
         }
 
         public override string ToString() { return pipelineName; }

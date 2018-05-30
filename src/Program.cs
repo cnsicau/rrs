@@ -7,6 +7,14 @@ namespace rrs
 {
     class Program
     {
+        static void OnConnect(IPipeline remote, IPipeline client)
+        {
+            Console.WriteLine($"remote {remote} connected.");
+            var connector = new PipelineConnector(client);
+            client.Interrupted += (s, e) => Console.WriteLine($"client {s} disconnected.");
+            remote.Interrupted += (s, e) => Console.WriteLine($"remote {s} disconnected.");
+            connector.Connect(client);
+        }
         static void Main(string[] args)
         {
             var server = new SocketPipelineServer(IPAddress.Any, 8811, 50);
@@ -15,20 +23,13 @@ namespace rrs
                 try
                 {
                     Console.WriteLine($"client {pipeline} connected.");
-                    var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                    socket.Connect("192.168.5.10", 80);
-
-                    var connector = new PipelineConnector(pipeline);
-
-                    connector.Disposed += (s, e) => Console.WriteLine($"client {pipeline} disconnected.");
-                    connector.Connect(new SocketPipeline(socket));
+                    var remote = new ClientSocketPipeline(IPAddress.Parse("192.168.5.10"), 80);
+                    remote.Connect(OnConnect, pipeline);
                 }
                 catch (Exception e)
                 {
-                    using (pipeline)
-                    {
-                        Console.WriteLine($"client {pipeline} faulted: {e}");
-                    }
+                    Console.WriteLine($"client {pipeline} faulted: {e}");
+                    pipeline.Interrupte();
                 }
             });
 

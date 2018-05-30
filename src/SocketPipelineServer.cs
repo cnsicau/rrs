@@ -55,7 +55,7 @@ namespace rrs
                 Accept(callback, state);
 
                 var socket = listenSocket.EndAccept(asr);
-                callback(new SocketPipeline(socket, true), state);
+                callback(new SocketPipeline(socket), state);
             }
             catch (ObjectDisposedException) { }
         }
