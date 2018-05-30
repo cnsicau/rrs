@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Net;
-using System.Net.Sockets;
-using System.Text;
 
 namespace rrs
 {
@@ -10,29 +8,29 @@ namespace rrs
         static void OnConnect(IPipeline remote, IPipeline client)
         {
             Console.WriteLine($"remote {remote} connected.");
-            var connector = new PipelineConnector(remote);
-            client.Interrupted += (s, e) => Console.WriteLine($"client {s} disconnected.");
-            remote.Interrupted += (s, e) => Console.WriteLine($"remote {s} disconnected.");
-            connector.Connect(client);
+
+            remote.Interrupted += Interrupted;
+            client.Interrupted += Interrupted;
+
+            new PipelineConnector(remote).Connect(client);
         }
+
+        static void Interrupted(object sender, EventArgs e)
+        {
+            Console.WriteLine($"connection {sender} disconnected.");
+        }
+
+        static void Accept(IPipeline pipeline, object state)
+        {
+            Console.WriteLine($"client {pipeline} connected.");
+            var remote = new ClientSocketPipeline(IPAddress.Parse("192.168.5.10"), 80);
+            remote.Connect(OnConnect, pipeline);
+        }
+
         static void Main(string[] args)
         {
             var server = new SocketPipelineServer(IPAddress.Any, 8811, 50);
-            server.Run<object>((pipeline, state) =>
-            {
-                try
-                {
-                    Console.WriteLine($"client {pipeline} connected.");
-                    var remote = new ClientSocketPipeline(IPAddress.Parse("192.168.5.10"), 80);
-                    remote.Connect(OnConnect, pipeline);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine($"client {pipeline} faulted: {e}");
-                    pipeline.Interrupte();
-                }
-            });
-
+            server.Run<object>(Accept);
             Console.WriteLine("Any key to exit.");
             Console.ReadKey(true);
         }
