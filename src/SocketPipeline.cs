@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.IO;
 using System.Net.Sockets;
-using System.Text;
+using System.Threading;
 
 namespace rrs
 {
@@ -13,9 +13,12 @@ namespace rrs
         private readonly NetworkStream stream;
         private readonly SocketPacket input;
         private EventHandler interrupted;
+        private int interrupting = 0;
+        private string pipelineName;
 
         public SocketPipeline(Socket socket, bool ownedSocket = true)
         {
+            pipelineName = socket.RemoteEndPoint + "=>" + socket.LocalEndPoint;
             this.stream = new NetworkStream(socket, ownedSocket);
             this.input = new SocketPacket(this);
         }
@@ -28,8 +31,12 @@ namespace rrs
 
         public void Interrupte()
         {
+            if (Interlocked.Increment(ref interrupting) > 1) return; // 已在中止处理忽略
             using (stream)
             {
+                stream.Flush();
+                stream.Close();
+
                 if (interrupted != null)
                 {
                     interrupted(this, EventArgs.Empty);
@@ -38,44 +45,59 @@ namespace rrs
             }
         }
 
-        void IDisposable.Dispose()
-        {
-            Interrupte();
-        }
+        void IDisposable.Dispose() { Interrupte(); }
 
-        void IPipeline.Input<TState>(Action<IPacket, TState> callback, TState state)
+        void IPipeline.Input<TState>(IOCompleteCallback<TState> callback, TState state)
         {
             if (!this.input.Disposed) throw new InvalidOperationException("input packet is not disposed.");
 
             try { stream.BeginRead(((IPacket)input).Buffer, 0, SocketPacket.BufferSize, CompleteInput<TState>, new object[] { callback, state }); }
+            catch (IOException) { using (this) { } }
+            catch (ObjectDisposedException) { using (this) { } }
             catch { using (this) { throw; } }
         }
 
         void CompleteInput<TState>(IAsyncResult asr)
         {
-            try { input.SetSize(stream.EndRead(asr)); }
+            try
+            {
+                var size = stream.EndRead(asr);
+                if (size == 0) using (this) { }
+                else
+                {
+                    input.SetSize(size);
+                    var args = (object[])asr.AsyncState;
+                    ((IOCompleteCallback<TState>)args[0])(this, input, (TState)args[1]);
+                }
+            }
+            catch (ObjectDisposedException) { using (this) { } }
             catch { using (this) { throw; } }
-            ((Action<IPacket, TState>)((object[])asr.AsyncState)[0])(input, (TState)((object[])asr.AsyncState)[1]);
         }
 
-        void IPipeline.Interrupte()
-        {
-            throw new NotImplementedException();
-        }
+        void IPipeline.Interrupte() { Interrupte(); }
 
-        void IPipeline.Output<TState>(IPacket packet, Action<TState> callback, TState state)
+        void IPipeline.Output<TState>(IPacket packet, IOCompleteCallback<TState> callback, TState state)
         {
             if (packet.Disposed) throw new InvalidOperationException("packet is disposed.");
 
-            try { stream.BeginWrite(packet.Buffer, 0, packet.Size, CompleteOutput<TState>, new object[] { callback, state }); }
+            try { stream.BeginWrite(packet.Buffer, 0, packet.Size, CompleteOutput<TState>, new object[] { callback, packet, state }); }
+            catch (IOException) { using (this) { } }
+            catch (ObjectDisposedException) { using (this) { } }
             catch { using (this) { throw; } }
         }
 
         void CompleteOutput<TState>(IAsyncResult asr)
         {
-            try { stream.EndWrite(asr); }
+            try
+            {
+                stream.EndWrite(asr);
+                var args = (object[])asr.AsyncState;
+                ((IOCompleteCallback<TState>)args[0])(this, (IPacket)args[1], (TState)args[2]);
+            }
+            catch (ObjectDisposedException) { using (this) { } }
             catch { using (this) { throw; } }
-            ((Action<TState>)((object[])asr.AsyncState)[0])((TState)((object[])asr.AsyncState)[1]);
         }
+
+        public override string ToString() { return pipelineName; }
     }
 }

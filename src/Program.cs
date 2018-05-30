@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
@@ -8,32 +9,30 @@ namespace rrs
     {
         static void Main(string[] args)
         {
-            var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            socket.Connect("umeqy.com", 17018);
-
-            IPipeline pipeline = new SocketPipeline(socket);
-            Action<IPacket, string> callback = null;
-            callback = (packet, state) =>
+            var server = new SocketPipelineServer(IPAddress.Any, 8811, 50);
+            server.Run<object>((pipeline, state) =>
             {
-                Console.WriteLine("count: " + packet.Size + " " + Encoding.UTF8.GetString(packet.Buffer, 0, packet.Size));
-                packet.Dispose();
-                pipeline.Input(callback, state);
-            };
+                try
+                {
+                    Console.WriteLine($"client {pipeline} connected.");
+                    var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                    socket.Connect("192.168.5.10", 80);
 
-            pipeline.Input(callback, string.Empty);
+                    var connector = new PipelineConnector(pipeline);
 
-            IPacket req = new SocketPacket((SocketPipeline)pipeline);
-            var bytes = Encoding.UTF8.GetBytes("GET / HTTP/1.1\r\nHost: umeqy.com:17018\r\n\r\n");
-            Array.Copy(bytes, req.Buffer, bytes.Length);
-            ((SocketPacket)req).SetSize(bytes.Length);
-
-            pipeline.Output(req, state => { Console.WriteLine("request completed."); }, string.Empty);
+                    connector.Disposed += (s, e) => Console.WriteLine($"client {pipeline} disconnected.");
+                    connector.Connect(new SocketPipeline(socket));
+                }
+                catch (Exception e)
+                {
+                    using (pipeline)
+                    {
+                        Console.WriteLine($"client {pipeline} faulted: {e}");
+                    }
+                }
+            });
 
             Console.WriteLine("Any key to exit.");
-            Console.ReadKey(true);
-
-            pipeline.Dispose();
-
             Console.ReadKey(true);
         }
     }

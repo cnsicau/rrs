@@ -21,7 +21,7 @@ namespace rrs
         /// <param name="callback"></param>
         /// <param name="state"></param>
         /// <returns></returns>
-        void Input<TState>(Action<IPacket, TState> callback, TState state);
+        void Input<TState>(IOCompleteCallback<TState> callback, TState state = default(TState));
 
         /// <summary>
         /// 开始输出
@@ -31,6 +31,6 @@ namespace rrs
         /// <param name="callback"></param>
         /// <param name="state"></param>
         /// <returns></returns>
-        void Output<TState>(IPacket packet, Action<TState> callback, TState state);
+        void Output<TState>(IPacket packet, IOCompleteCallback<TState> callback, TState state = default(TState));
     }
 }
