@@ -45,9 +45,7 @@ namespace rrs
 
             if (!stream.IsValueCreated)
             {
-                socket.Shutdown(SocketShutdown.Both);
-                socket.Close();
-                interrupted?.Invoke(this, EventArgs.Empty);
+                using (socket) { interrupted?.Invoke(this, EventArgs.Empty); }
             }
             else
             {

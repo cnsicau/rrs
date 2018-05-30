@@ -30,6 +30,7 @@ namespace rrs
             }
             catch (Exception e)
             {
+                callback(this, false, state);
                 Trace.WriteLine($"ssl authenticated failed {e}.");
                 Interrupte();
             }
@@ -40,14 +41,15 @@ namespace rrs
 
         void OnAuthenticated<TState>(IAsyncResult asr)
         {
+            var args = (object[])asr.AsyncState;
             try
             {
                 sslStream.EndAuthenticateAsClient(asr);
-                var args = (object[])asr.AsyncState;
                 base.OnConnected((PipelineCallback<TState>)args[0], (TState)args[1]);
             }
             catch (Exception e)
             {
+                ((PipelineCallback<TState>)args[0])(this, false, (TState)args[1]);
                 Trace.WriteLine($"ssl authenticated failed {e}.");
                 Interrupte();
             }

@@ -5,8 +5,14 @@ namespace rrs
 {
     class Program
     {
-        static void OnConnect(IPipeline remote, IPipeline client)
+        static void OnConnect(IPipeline remote, bool success, IPipeline client)
         {
+            if (!success)
+            {
+                Console.WriteLine($"create remote for {client} failed.");
+                client.Interrupte();
+                return;
+            }
             Console.WriteLine($"remote {remote} connected.");
 
             remote.Interrupted += Interrupted;
@@ -20,10 +26,12 @@ namespace rrs
             Console.WriteLine($"connection {sender} disconnected.");
         }
 
-        static void Accept(IPipeline pipeline, object state)
+        static void Accept(IPipeline pipeline, bool success, object state)
         {
+            if (!success) return;
+
             Console.WriteLine($"client {pipeline} connected.");
-            var remote = new SslClientSocketPipeline(IPAddress.Parse("47.104.204.209"), 443);
+            var remote = new SslClientSocketPipeline(IPAddress.Parse("47.104.204.209"), 444);
             remote.Connect(OnConnect, pipeline);
         }
 

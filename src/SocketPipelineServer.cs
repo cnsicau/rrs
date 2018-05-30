@@ -40,19 +40,23 @@ namespace rrs
 
         void CompleteAccept<TState>(IAsyncResult asr)
         {
+            var args = (object[])asr.AsyncState;
+            var callback = (PipelineCallback<TState>)args[0];
+            var state = (TState)args[1];
+
             try
             {
-                var args = (object[])asr.AsyncState;
-                var callback = (PipelineCallback<TState>)args[0];
-                var state = (TState)args[1];
 
                 // 继续下一周期
                 Run(callback, state);
 
                 var socket = listenSocket.EndAccept(asr);
-                callback(new SocketPipeline(socket), state);
+                callback(new SocketPipeline(socket), true, state);
             }
-            catch (ObjectDisposedException) { }
+            catch (ObjectDisposedException)
+            {
+                callback(null, false, state);
+            }
         }
 
         public void Dispose()

@@ -24,22 +24,23 @@ namespace rrs
 
         void OnConnected<TState>(IAsyncResult asr)
         {
+            var args = (object[])asr.AsyncState;
             try
             {
                 Socket.EndConnect(asr);
                 pipelineName = Socket.LocalEndPoint + "=>" + Socket.RemoteEndPoint;
-                var args = (object[])asr.AsyncState;
                 OnConnected((PipelineCallback<TState>)args[0], (TState)args[1]);
             }
             catch
             {
+                ((PipelineCallback<TState>)args[0])(this, false, (TState)args[1]);
                 Interrupte();
             }
         }
 
         protected virtual void OnConnected<TState>(PipelineCallback<TState> callback, TState state = default(TState))
         {
-            callback(this, state);
+            callback(this, true, state);
         }
     }
 }
