@@ -21,7 +21,7 @@ namespace rrs
             return sslStream; ;
         }
 
-        protected override void OnConnected<TState>(Action<IPipeline, TState> callback, TState state = default(TState))
+        protected override void OnConnected<TState>(PipelineCallback<TState> callback, TState state = default(TState))
         {
             try
             {
@@ -44,7 +44,7 @@ namespace rrs
             {
                 sslStream.EndAuthenticateAsClient(asr);
                 var args = (object[])asr.AsyncState;
-                base.OnConnected((Action<IPipeline, TState>)args[0], (TState)args[1]);
+                base.OnConnected((PipelineCallback<TState>)args[0], (TState)args[1]);
             }
             catch (Exception e)
             {

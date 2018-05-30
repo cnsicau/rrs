@@ -16,7 +16,7 @@ namespace rrs
             this.port = port;
         }
 
-        public void Connect<TState>(Action<IPipeline, TState> callback, TState state = default(TState))
+        public void Connect<TState>(PipelineCallback<TState> callback, TState state = default(TState))
         {
             var socket = base.Socket;
             socket.BeginConnect(address, port, OnConnected<TState>, new object[] { callback, state });
@@ -29,7 +29,7 @@ namespace rrs
                 Socket.EndConnect(asr);
                 pipelineName = Socket.LocalEndPoint + "=>" + Socket.RemoteEndPoint;
                 var args = (object[])asr.AsyncState;
-                OnConnected((Action<IPipeline, TState>)args[0], (TState)args[1]);
+                OnConnected((PipelineCallback<TState>)args[0], (TState)args[1]);
             }
             catch
             {
@@ -37,7 +37,7 @@ namespace rrs
             }
         }
 
-        protected virtual void OnConnected<TState>(Action<IPipeline, TState> callback, TState state = default(TState))
+        protected virtual void OnConnected<TState>(PipelineCallback<TState> callback, TState state = default(TState))
         {
             callback(this, state);
         }

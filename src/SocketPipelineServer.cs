@@ -32,15 +32,10 @@ namespace rrs
         /// <typeparam name="TState"></typeparam>
         /// <param name="accept"></param>
         /// <param name="state"></param>
-        public void Run<TState>(Action<IPipeline, TState> accept, TState state = default(TState))
-        {
-            Accept(accept, state);
-        }
-
-        void Accept<TState>(Action<IPipeline, TState> callback, TState state = default(TState))
+        public void Run<TState>(PipelineCallback<TState> accept, TState state = default(TState))
         {
             if (!disposing)
-                listenSocket.BeginAccept(CompleteAccept<TState>, new object[] { callback, state });
+                listenSocket.BeginAccept(CompleteAccept<TState>, new object[] { accept, state });
         }
 
         void CompleteAccept<TState>(IAsyncResult asr)
@@ -48,11 +43,11 @@ namespace rrs
             try
             {
                 var args = (object[])asr.AsyncState;
-                var callback = (Action<IPipeline, TState>)args[0];
+                var callback = (PipelineCallback<TState>)args[0];
                 var state = (TState)args[1];
 
                 // 继续下一周期
-                Accept(callback, state);
+                Run(callback, state);
 
                 var socket = listenSocket.EndAccept(asr);
                 callback(new SocketPipeline(socket), state);
