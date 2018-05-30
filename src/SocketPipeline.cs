@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Net.Security;
 using System.Net.Sockets;
 using System.Threading;
 
@@ -10,7 +11,7 @@ namespace rrs
     /// </summary>
     public class SocketPipeline : IPipeline
     {
-        private readonly Lazy<NetworkStream> stream;
+        private readonly Lazy<Stream> stream;
         private readonly SocketPacket input;
         private readonly Socket socket;
         private EventHandler interrupted;
@@ -22,10 +23,13 @@ namespace rrs
             if (socket == null) throw new ArgumentNullException(nameof(socket));
 
             pipelineName = socket.RemoteEndPoint + "=>" + socket.LocalEndPoint;
-            this.stream = new Lazy<NetworkStream>(() => new NetworkStream(socket, true));
+            this.stream = new Lazy<Stream>(CreateStream);
             this.input = new SocketPacket(this);
             this.socket = socket;
         }
+        Stream CreateStream() { return OnCreateStream(); }
+
+        protected virtual Stream OnCreateStream() { return new NetworkStream(socket, true); }
 
         event EventHandler IPipeline.Interrupted
         {

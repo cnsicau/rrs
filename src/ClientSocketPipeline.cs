@@ -29,12 +29,17 @@ namespace rrs
                 Socket.EndConnect(asr);
                 pipelineName = Socket.LocalEndPoint + "=>" + Socket.RemoteEndPoint;
                 var args = (object[])asr.AsyncState;
-                ((Action<IPipeline, TState>)args[0])(this, (TState)args[1]);
+                OnConnected((Action<IPipeline, TState>)args[0], (TState)args[1]);
             }
             catch
             {
                 Interrupte();
             }
+        }
+
+        protected virtual void OnConnected<TState>(Action<IPipeline, TState> callback, TState state = default(TState))
+        {
+            callback(this, state);
         }
     }
 }
