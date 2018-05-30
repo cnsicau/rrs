@@ -29,5 +29,11 @@ namespace rrs
         /// 包是否已释放
         /// </summary>
         bool Disposed { get; }
+
+        /// <summary>
+        /// 设置数据大小
+        /// </summary>
+        /// <param name="size"></param>
+        void SetSize(int size);
     }
 }
