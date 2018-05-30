@@ -27,6 +27,7 @@ namespace rrs
             try
             {
                 Socket.EndConnect(asr);
+                pipelineName = Socket.LocalEndPoint + "=>" + Socket.RemoteEndPoint;
                 var args = (object[])asr.AsyncState;
                 ((Action<IPipeline, TState>)args[0])(this, (TState)args[1]);
             }

@@ -15,14 +15,14 @@ namespace rrs
         private readonly Socket socket;
         private EventHandler interrupted;
         private int interrupting = 0;
-        private string pipelineName;
+        protected string pipelineName;
 
         public SocketPipeline(Socket socket)
         {
             if (socket == null) throw new ArgumentNullException(nameof(socket));
 
             pipelineName = socket.RemoteEndPoint + "=>" + socket.LocalEndPoint;
-            this.stream = new Lazy<NetworkStream>(() => new NetworkStream(socket));
+            this.stream = new Lazy<NetworkStream>(() => new NetworkStream(socket, true));
             this.input = new SocketPacket(this);
             this.socket = socket;
         }
@@ -41,6 +41,8 @@ namespace rrs
 
             if (!stream.IsValueCreated)
             {
+                socket.Shutdown(SocketShutdown.Both);
+                socket.Close();
                 interrupted?.Invoke(this, EventArgs.Empty);
             }
             else

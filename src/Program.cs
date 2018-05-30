@@ -10,7 +10,7 @@ namespace rrs
         static void OnConnect(IPipeline remote, IPipeline client)
         {
             Console.WriteLine($"remote {remote} connected.");
-            var connector = new PipelineConnector(client);
+            var connector = new PipelineConnector(remote);
             client.Interrupted += (s, e) => Console.WriteLine($"client {s} disconnected.");
             remote.Interrupted += (s, e) => Console.WriteLine($"remote {s} disconnected.");
             connector.Connect(client);
