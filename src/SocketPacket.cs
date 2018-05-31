@@ -2,7 +2,7 @@
 
 namespace rrs
 {
-    public class SocketPacket : IPacket
+    public class Packet : IPacket
     {
         /// <summary>
         /// 默认包8K
@@ -11,10 +11,10 @@ namespace rrs
 
         private int size = 0;
         private readonly byte[] buffer = new byte[BufferSize];
-        private readonly SocketPipeline source;
+        private readonly IPipeline source;
         private bool disposed = true;
 
-        public SocketPacket(SocketPipeline source)
+        public Packet(IPipeline source)
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
 

@@ -38,7 +38,6 @@ namespace rrs
 
         bool CertificateValidation(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors) { return true; }
 
-
         void OnAuthenticated<TState>(IAsyncResult asr)
         {
             var args = (object[])asr.AsyncState;

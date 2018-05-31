@@ -1,0 +1,77 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace rrs
+{
+    public class TunnelPacketReader
+    {
+        private readonly TunnelPacket tunnelPacket;
+        private readonly byte[] headerBytes = new byte[TunnelPacket.HeaderSize];   // 信息头内容
+        private int headerSize;
+
+        private int packetBufferSize = 0;
+
+        private int sourceOffset = 0;
+        private int sourceSize;
+        private byte[] source;
+
+        public TunnelPacketReader(TunnelPacket tunnelPacket)
+        {
+            this.tunnelPacket = tunnelPacket;
+        }
+
+        /// <summary>
+        /// 尝试读取
+        /// </summary>
+        /// <param name="tunnelPacket"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public bool Read()
+        {
+            if (sourceOffset == sourceSize) return false;
+
+            if (headerSize < TunnelPacket.HeaderSize)
+            {
+                for (int i = headerSize; i < TunnelPacket.HeaderSize && sourceOffset < sourceSize; i++)
+                {
+                    headerBytes[i] = source[sourceOffset++];
+                }
+
+                if (headerSize < TunnelPacket.HeaderSize)
+                {
+                    return false;   // Header 不足
+                }
+                // 解析包头
+                ((IPacket)tunnelPacket).SetSize(((headerBytes[1] & 0x3f) << 8) | headerBytes[2]);
+                tunnelPacket.Type = (TunnelPacketType)((headerBytes[1] >> 6) | (headerBytes[0] & 1) << 2);
+                tunnelPacket.Version = (0xf & (headerBytes[0] >> 1));
+                tunnelPacket.Magic = (headerBytes[0] >> (4 - 1/*Version解析时已移一位*/));
+            }
+
+            var dataSize = Math.Min(sourceSize - sourceOffset, ((IPacket)tunnelPacket).Size - packetBufferSize);
+            Array.Copy(source, sourceOffset, ((IPacket)tunnelPacket).Buffer, packetBufferSize, dataSize);
+            packetBufferSize += dataSize;
+            sourceOffset += dataSize;
+
+            if (packetBufferSize == ((IPacket)tunnelPacket).Size)
+            {
+                // 重置
+                headerSize = 0;
+                packetBufferSize = 0;
+                return true;
+            }
+            return false;
+        }
+
+        public void SetSource(byte[] source, int size)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+            if (size <= 0 || size > source.Length) throw new ArgumentOutOfRangeException(nameof(size));
+
+            this.sourceOffset = 0;
+            this.source = source;
+            this.sourceSize = size;
+        }
+    }
+}

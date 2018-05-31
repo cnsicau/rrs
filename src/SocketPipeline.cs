@@ -12,7 +12,7 @@ namespace rrs
     public class SocketPipeline : IPipeline
     {
         private readonly Lazy<Stream> stream;
-        private readonly SocketPacket input;
+        private readonly Packet input;
         private readonly Socket socket;
         private EventHandler interrupted;
         private int interrupting = 0;
@@ -24,7 +24,7 @@ namespace rrs
 
             pipelineName = socket.RemoteEndPoint + "=>" + socket.LocalEndPoint;
             this.stream = new Lazy<Stream>(CreateStream);
-            this.input = new SocketPacket(this);
+            this.input = new Packet(this);
             this.socket = socket;
         }
         Stream CreateStream() { return OnCreateStream(); }
@@ -65,7 +65,7 @@ namespace rrs
         {
             if (!this.input.Disposed) throw new InvalidOperationException("input packet is not disposed.");
 
-            try { stream.Value.BeginRead(((IPacket)input).Buffer, 0, SocketPacket.BufferSize, CompleteInput<TState>, new object[] { callback, state }); }
+            try { stream.Value.BeginRead(((IPacket)input).Buffer, 0, Packet.BufferSize, CompleteInput<TState>, new object[] { callback, state }); }
             catch (IOException) { Interrupte(); }
             catch (ObjectDisposedException) { Interrupte(); }
             catch { Interrupte(); throw; }

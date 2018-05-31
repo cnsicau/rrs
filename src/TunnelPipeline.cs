@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace rrs
 {
@@ -8,45 +6,48 @@ namespace rrs
     {
         private readonly IPipeline pipeline;
         private readonly TunnelPacket inputPacket;
-        private IPacket pendingPacket;
-        private int bufferIndex = TunnelPacket.MaxDataSize;
-        private int pendingIndex = 0;
+        private readonly TunnelPacketReader reader;
+        private readonly TunnelPacketWriter writer;
 
         public TunnelPipeline(IPipeline pipeline)
         {
             this.pipeline = pipeline;
             inputPacket = new TunnelPacket(this);
+            reader = new TunnelPacketReader(inputPacket);
+            writer = new TunnelPacketWriter(this);
+            pipeline.Interrupted += OnInterrupted;
         }
 
-        public event EventHandler Interrupted
-        {
-            add { pipeline.Interrupted += value; }
-            remove { pipeline.Interrupted -= value; }
-        }
+        public IPipeline TransPipeline { get { return pipeline; } }
+
+
+        void OnInterrupted(object sender, EventArgs e) { Interrupted?.Invoke(this, e); }
+
+        public event EventHandler Interrupted;
 
         public void Dispose() { pipeline.Dispose(); }
 
         public void Input<TState>(IOCompleteCallback<TState> callback, TState state = default(TState))
         {
-            pipeline.Input(PackagePacket, state);
+            if (reader.Read())
+            {
+                callback(this, inputPacket, state);
+            }
+            else
+            {
+                pipeline.Input(CompleteBufferInput<TState>, new object[] { callback, state });
+            }
         }
 
-        void PackagePacket<TState>(IPipeline pipeline, IPacket packet, TState state)
+        void CompleteBufferInput<TState>(IPipeline pipeline, IPacket packet, object[] args)
         {
-            if (bufferIndex == TunnelPacket.MaxDataSize + TunnelPacket.HeaderSize) // 指向内容块
-            {
-                bufferIndex = 0;
-            }
+            reader.SetSource(packet.Buffer, packet.Size);
+            packet.Dispose();   // used
 
-            if (bufferIndex > TunnelPacket.MaxDataSize) // 复制内容块
-            {
+            var callback = (IOCompleteCallback<TState>)args[0];
+            var state = (TState)args[1];
 
-            }
-            else // 复制数据
-            {
-
-            }
-            pendingPacket = packet;
+            Input(callback, state); // 
         }
 
         public void Interrupte()
@@ -56,7 +57,7 @@ namespace rrs
 
         public void Output<TState>(IPacket packet, IOCompleteCallback<TState> callback, TState state = default(TState))
         {
-            pipeline.Output(packet, callback, state);
+            writer.Write(packet, callback, state);
         }
     }
 }
