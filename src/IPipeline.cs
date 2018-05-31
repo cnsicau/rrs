@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace rrs
+namespace Rrs
 {
     public interface IPipeline : IDisposable
     {

@@ -2,14 +2,14 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 
-namespace rrs
+namespace Rrs.Tcp
 {
-    public class ClientSocketPipeline : SocketPipeline
+    public class TcpClientPipeline : TcpPipeline
     {
         private readonly IPAddress address;
         private readonly int port;
 
-        public ClientSocketPipeline(IPAddress address, int port)
+        public TcpClientPipeline(IPAddress address, int port)
           : base(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
         {
             this.address = address;

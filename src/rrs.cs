@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Net;
 using System.Threading;
-using rrs.Tunnel;
+using Rrs.Tunnel;
+using Rrs.Tcp;
 
-namespace rrs
+namespace Rrs
 {
     class rrs
     {
@@ -48,13 +49,13 @@ namespace rrs
 
             if (Console.ReadKey().Key == ConsoleKey.Y)
             {
-                var server = new SocketPipelineServer(IPAddress.Any, 8811, 50);
+                var server = new TcpPipelineServer(IPAddress.Any, 8811, 50);
                 var tunnelServer = new TunnelPipelineServer(server);
                 tunnelServer.Run<object>(Connect);
             }
             else
             {
-                var client = new ClientSocketPipeline(IPAddress.Loopback, 8811);
+                var client = new TcpClientPipeline(IPAddress.Loopback, 8811);
                 var tunnelClient = new TunnelPipeline(client);
                 client.Connect(OnConnect, tunnelClient);
             }

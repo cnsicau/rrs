@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 
-namespace rrs
+namespace Rrs
 {
     public class PipelineConnector : IDisposable
     {

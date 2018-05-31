@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace rrs
+namespace Rrs
 {
     public class Packet : IPacket
     {

@@ -2,9 +2,9 @@
 using System.Net;
 using System.Net.Sockets;
 
-namespace rrs
+namespace Rrs.Tcp
 {
-    class SocketPipelineServer : IPipelineServer
+    class TcpPipelineServer : IPipelineServer
     {
         private readonly Socket listenSocket;
         private readonly int backlog;
@@ -17,7 +17,7 @@ namespace rrs
         /// </summary>
         /// <param name="address"></param>
         /// <param name="port"></param>
-        public SocketPipelineServer(IPAddress address, int port, int backlog)
+        public TcpPipelineServer(IPAddress address, int port, int backlog)
         {
             this.backlog = backlog;
 
@@ -51,7 +51,7 @@ namespace rrs
                 Run(callback, state);
 
                 var socket = listenSocket.EndAccept(asr);
-                callback(new SocketPipeline(socket), true, state);
+                callback(new TcpPipeline(socket), true, state);
             }
             catch (ObjectDisposedException)
             {

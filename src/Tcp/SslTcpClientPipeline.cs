@@ -5,13 +5,13 @@ using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 
-namespace rrs
+namespace Rrs.Tcp
 {
-    public class SslClientSocketPipeline : ClientSocketPipeline
+    public class SslTcpClientPipeline : TcpClientPipeline
     {
         private SslStream sslStream;
 
-        public SslClientSocketPipeline(IPAddress address, int port) : base(address, port) { }
+        public SslTcpClientPipeline(IPAddress address, int port) : base(address, port) { }
 
         protected override Stream OnCreateStream()
         {

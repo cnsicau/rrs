@@ -3,12 +3,12 @@ using System.IO;
 using System.Net.Sockets;
 using System.Threading;
 
-namespace rrs
+namespace Rrs.Tcp
 {
     /// <summary>
     /// 
     /// </summary>
-    public class SocketPipeline : IPipeline
+    public class TcpPipeline : IPipeline
     {
         private readonly Lazy<Stream> stream;
         private readonly Packet input;
@@ -17,7 +17,7 @@ namespace rrs
         private int interrupting = 0;
         protected string pipelineName;
 
-        public SocketPipeline(Socket socket)
+        public TcpPipeline(Socket socket)
         {
             if (socket == null) throw new ArgumentNullException(nameof(socket));
 
