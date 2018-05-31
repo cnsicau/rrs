@@ -8,6 +8,7 @@ namespace Rrs.Tunnel
         private readonly TunnelPacket inputPacket;
         private readonly TunnelPacketReader reader;
         private readonly TunnelPacketWriter writer;
+        private bool interrupted = false;
 
         public TunnelPipeline(IPipeline pipeline)
         {
@@ -21,7 +22,11 @@ namespace Rrs.Tunnel
         public IPipeline TransPipeline { get { return pipeline; } }
 
 
-        void OnInterrupted(object sender, EventArgs e) { Interrupted?.Invoke(this, e); }
+        void OnInterrupted(object sender, EventArgs e)
+        {
+            interrupted = true;
+            Interrupted?.Invoke(this, e);
+        }
 
         public event EventHandler Interrupted;
 
@@ -52,6 +57,10 @@ namespace Rrs.Tunnel
 
         public void Interrupte()
         {
+            if (interrupted) return;
+
+            //pipeline.Output()
+
             pipeline.Interrupte();
         }
 
