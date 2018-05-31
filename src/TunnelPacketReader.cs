@@ -33,9 +33,9 @@ namespace rrs
 
             if (headerSize < TunnelPacket.HeaderSize)
             {
-                for (int i = headerSize; i < TunnelPacket.HeaderSize && sourceOffset < sourceSize; i++)
+                for (; headerSize < TunnelPacket.HeaderSize && sourceOffset < sourceSize; headerSize++)
                 {
-                    headerBytes[i] = source[sourceOffset++];
+                    headerBytes[headerSize] = source[sourceOffset++];
                 }
 
                 if (headerSize < TunnelPacket.HeaderSize)
@@ -46,7 +46,7 @@ namespace rrs
                 ((IPacket)tunnelPacket).SetSize(((headerBytes[1] & 0x3f) << 8) | headerBytes[2]);
                 tunnelPacket.Type = (TunnelPacketType)((headerBytes[1] >> 6) | (headerBytes[0] & 1) << 2);
                 tunnelPacket.Version = (0xf & (headerBytes[0] >> 1));
-                tunnelPacket.Magic = (headerBytes[0] >> (4 - 1/*Version解析时已移一位*/));
+                tunnelPacket.Magic = headerBytes[0] >> 4;
             }
 
             var dataSize = Math.Min(sourceSize - sourceOffset, ((IPacket)tunnelPacket).Size - packetBufferSize);

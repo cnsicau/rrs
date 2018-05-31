@@ -38,7 +38,7 @@ namespace rrs
             buffer[0] = (byte)(firstByte | (packetType >> 8));
 
             var dataSize = Math.Min(Packet.BufferSize - 3, outputPacket.Size);
-            transPacket.SetSize(dataSize);
+            transPacket.SetSize(dataSize + TunnelPacket.HeaderSize);
             if (dataSize > 0)
             {
                 Array.Copy(outputPacket.Buffer, 0, buffer, TunnelPacket.HeaderSize, dataSize);
