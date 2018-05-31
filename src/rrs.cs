@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Net;
 using System.Threading;
+using rrs.Tunnel;
 
 namespace rrs
 {
-    class Program
+    class rrs
     {
         static void Connect(IPipeline pipeline, bool success, object state)
         {
@@ -43,7 +44,7 @@ namespace rrs
 
         static void Main(string[] args)
         {
-            Console.WriteLine("run as server(y/n) ? ");
+            Console.Write("run as server(y/n) ? ");
 
             if (Console.ReadKey().Key == ConsoleKey.Y)
             {
@@ -58,7 +59,7 @@ namespace rrs
                 client.Connect(OnConnect, tunnelClient);
             }
 
-            Console.WriteLine("Any key to exit.");
+            Console.WriteLine("\nAny key to exit.");
             Console.ReadKey(true);
         }
     }

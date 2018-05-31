@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Net.Security;
 using System.Net.Sockets;
 using System.Threading;
 
@@ -27,6 +26,7 @@ namespace rrs
             this.input = new Packet(this);
             this.socket = socket;
         }
+
         Stream CreateStream() { return OnCreateStream(); }
 
         protected virtual Stream OnCreateStream() { return new NetworkStream(socket, true); }
@@ -84,8 +84,9 @@ namespace rrs
                     ((IOCompleteCallback<TState>)args[0])(this, input, (TState)args[1]);
                 }
             }
-            catch (ObjectDisposedException) { using (this) { } }
-            catch { using (this) { throw; } }
+            catch (IOException) { Interrupte(); }
+            catch (ObjectDisposedException) { Interrupte(); }
+            catch { Interrupte(); throw; }
         }
 
         void IPipeline.Interrupte() { Interrupte(); }

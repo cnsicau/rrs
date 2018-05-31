@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace rrs
+namespace rrs.Tunnel
 {
     public class TunnelPacketReader
     {

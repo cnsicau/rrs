@@ -1,4 +1,4 @@
-﻿namespace rrs
+﻿namespace rrs.Tunnel
 {
     public enum TunnelPacketType : byte
     {

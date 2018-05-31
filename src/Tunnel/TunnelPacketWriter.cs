@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace rrs
+namespace rrs.Tunnel
 {
     public class TunnelPacketWriter
     {
