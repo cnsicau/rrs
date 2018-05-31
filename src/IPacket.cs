@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace rrs
 {
@@ -24,16 +22,15 @@ namespace rrs
         /// </summary>
         byte[] Buffer { get; }
 
-
         /// <summary>
         /// 包是否已释放
         /// </summary>
         bool Disposed { get; }
 
         /// <summary>
-        /// 设置数据大小
+        /// 激活数据包
         /// </summary>
-        /// <param name="size"></param>
-        void SetSize(int size);
+        /// <param name="size">数据大小</param>
+        void Relive(int size);
     }
 }

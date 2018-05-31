@@ -79,7 +79,7 @@ namespace rrs
                 if (size == 0) Interrupte();
                 else
                 {
-                    input.SetSize(size);
+                    input.Relive(size);
                     var args = (object[])asr.AsyncState;
                     ((IOCompleteCallback<TState>)args[0])(this, input, (TState)args[1]);
                 }

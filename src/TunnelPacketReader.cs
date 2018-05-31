@@ -42,11 +42,19 @@ namespace rrs
                 {
                     return false;   // Header 不足
                 }
-                // 解析包头
-                ((IPacket)tunnelPacket).SetSize(((headerBytes[1] & 0x3f) << 8) | headerBytes[2]);
+                ///  位       码     说明
+                /// 0 - 3     MAGIC  标识头  4位 (1111) 15
+                /// 4 - 6     VER    版本    3位 (010)  2
+                /// 7 - 9     TYPE   类型    3位  TunnelPacketType 枚举值
+                /// 10 - 23   SIZE   长度    14位 1 - 8192
+                ((IPacket)tunnelPacket).Relive(((headerBytes[1] & 0x3f) << 8) | headerBytes[2]);
                 tunnelPacket.Type = (TunnelPacketType)((headerBytes[1] >> 6) | (headerBytes[0] & 1) << 2);
-                tunnelPacket.Version = (0xf & (headerBytes[0] >> 1));
+                tunnelPacket.Version = (0x7 & (headerBytes[0] >> 1));
                 tunnelPacket.Magic = headerBytes[0] >> 4;
+                if (tunnelPacket.Magic != TunnelPacket.MagicValue || tunnelPacket.Version != TunnelPacket.VersionValue)
+                {
+                    ((IPacket)tunnelPacket).Source.Interrupte();   // 中断无效报文连接
+                }
             }
 
             var dataSize = Math.Min(sourceSize - sourceOffset, ((IPacket)tunnelPacket).Size - packetBufferSize);

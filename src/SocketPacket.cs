@@ -31,7 +31,7 @@ namespace rrs
         /// 设置缓冲区有效数据大小
         /// </summary>
         /// <param name="size"></param>
-        public void SetSize(int size)
+        public void Relive(int size)
         {
             if (size < 0 || size > BufferSize) throw new IndexOutOfRangeException("size");
             disposed = false;
