@@ -13,7 +13,7 @@ namespace Rrs.Tcp
 
         public SslTcpClientPipeline(IPAddress address, int port) : base(address, port) { }
 
-        protected override Stream OnCreateStream()
+        protected override Stream CreateStream()
         {
             if (sslStream == null)
                 throw new InvalidOperationException("connection is not connected.");
@@ -25,7 +25,7 @@ namespace Rrs.Tcp
         {
             try
             {
-                sslStream = new SslStream(base.OnCreateStream(), false, CertificateValidation);
+                sslStream = new SslStream(base.CreateStream(), false, CertificateValidation);
                 sslStream.BeginAuthenticateAsClient($"https://{Socket.RemoteEndPoint}", OnAuthenticated<TState>, new object[] { callback, state });
             }
             catch (Exception e)

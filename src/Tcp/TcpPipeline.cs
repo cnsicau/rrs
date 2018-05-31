@@ -10,7 +10,7 @@ namespace Rrs.Tcp
     /// </summary>
     public class TcpPipeline : IPipeline
     {
-        private readonly Lazy<Stream> stream;
+        private Stream stream;
         private readonly Packet input;
         private readonly Socket socket;
         private EventHandler interrupted;
@@ -22,14 +22,19 @@ namespace Rrs.Tcp
             if (socket == null) throw new ArgumentNullException(nameof(socket));
 
             pipelineName = socket.RemoteEndPoint + "=>" + socket.LocalEndPoint;
-            this.stream = new Lazy<Stream>(CreateStream);
             this.input = new Packet(this);
             this.socket = socket;
         }
 
-        Stream CreateStream() { return OnCreateStream(); }
+        protected Stream GetStream()
+        {
+            if (stream == null)
+                stream = CreateStream();
 
-        protected virtual Stream OnCreateStream() { return new NetworkStream(socket, true); }
+            return stream;
+        }
+
+        protected virtual Stream CreateStream() { return new NetworkStream(socket, true); }
 
         event EventHandler IPipeline.Interrupted
         {
@@ -43,16 +48,16 @@ namespace Rrs.Tcp
         {
             if (Interlocked.Increment(ref interrupting) > 1) return; // 已在中止处理忽略
 
-            if (!stream.IsValueCreated)
+            if (stream == null)
             {
                 using (socket) { interrupted?.Invoke(this, EventArgs.Empty); }
             }
             else
             {
-                using (stream.Value)
+                using (stream)
                 {
-                    stream.Value.Flush();
-                    stream.Value.Close();
+                    stream.Flush();
+                    stream.Close();
                     interrupted?.Invoke(this, EventArgs.Empty);
                 }
             }
@@ -63,9 +68,9 @@ namespace Rrs.Tcp
 
         void IPipeline.Input<TState>(IOCompleteCallback<TState> callback, TState state)
         {
-            if (!this.input.Disposed) throw new InvalidOperationException("input packet is not disposed.");
+            if (!input.Disposed) throw new InvalidOperationException("input packet is not disposed.");
 
-            try { stream.Value.BeginRead(((IPacket)input).Buffer, 0, Packet.BufferSize, CompleteInput<TState>, new object[] { callback, state }); }
+            try { GetStream().BeginRead(((IPacket)input).Buffer, 0, Packet.BufferSize, CompleteInput<TState>, new object[] { callback, state }); }
             catch (IOException) { Interrupte(); }
             catch (ObjectDisposedException) { Interrupte(); }
             catch { Interrupte(); throw; }
@@ -75,7 +80,7 @@ namespace Rrs.Tcp
         {
             try
             {
-                var size = stream.Value.EndRead(asr);
+                var size = GetStream().EndRead(asr);
                 if (size == 0) Interrupte();
                 else
                 {
@@ -95,7 +100,7 @@ namespace Rrs.Tcp
         {
             if (packet.Disposed) throw new InvalidOperationException("packet is disposed.");
 
-            try { stream.Value.BeginWrite(packet.Buffer, 0, packet.Size, CompleteOutput<TState>, new object[] { callback, packet, state }); }
+            try { GetStream().BeginWrite(packet.Buffer, 0, packet.Size, CompleteOutput<TState>, new object[] { callback, packet, state }); }
             catch (IOException) { Interrupte(); }
             catch (ObjectDisposedException) { Interrupte(); }
             catch { Interrupte(); throw; }
@@ -105,7 +110,7 @@ namespace Rrs.Tcp
         {
             try
             {
-                stream.Value.EndWrite(asr);
+                GetStream().EndWrite(asr);
                 var args = (object[])asr.AsyncState;
                 ((IOCompleteCallback<TState>)args[0])(this, (IPacket)args[1], (TState)args[2]);
             }
