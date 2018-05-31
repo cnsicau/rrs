@@ -4,9 +4,9 @@ using System.Net.Sockets;
 
 namespace Rrs.Tcp
 {
-    class TcpPipelineServer : IPipelineServer
+    public class TcpPipelineServer : IPipelineServer
     {
-        private readonly Socket listenSocket;
+        private readonly Socket listen;
         private readonly int backlog;
         private bool disposing;
 
@@ -21,9 +21,9 @@ namespace Rrs.Tcp
         {
             this.backlog = backlog;
 
-            this.listenSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            this.listenSocket.Bind(new IPEndPoint(address, port));
-            this.listenSocket.Listen(backlog);
+            this.listen = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            this.listen.Bind(new IPEndPoint(address, port));
+            this.listen.Listen(backlog);
         }
 
         /// <summary>
@@ -35,7 +35,7 @@ namespace Rrs.Tcp
         public void Run<TState>(PipelineCallback<TState> accept, TState state = default(TState))
         {
             if (!disposing)
-                listenSocket.BeginAccept(CompleteAccept<TState>, new object[] { accept, state });
+                listen.BeginAccept(CompleteAccept<TState>, new object[] { accept, state });
         }
 
         void CompleteAccept<TState>(IAsyncResult asr)
@@ -46,17 +46,20 @@ namespace Rrs.Tcp
 
             try
             {
-
                 // 继续下一周期
                 Run(callback, state);
-
-                var socket = listenSocket.EndAccept(asr);
-                callback(new TcpPipeline(socket), true, state);
+                var socket = listen.EndAccept(asr);
+                OnCreatePipeline(socket, callback, state);
             }
             catch (ObjectDisposedException)
             {
                 callback(null, false, state);
             }
+        }
+
+        protected virtual void OnCreatePipeline<TState>(Socket socket, PipelineCallback<TState> callback, TState state)
+        {
+            callback(new TcpPipeline(socket), true, state);
         }
 
         public void Dispose()

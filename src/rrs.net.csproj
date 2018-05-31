@@ -37,6 +37,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="project.json" />
+    <None Include="ssl.pfx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
@@ -50,7 +53,9 @@
     <Compile Include="PipelineCallback.cs" />
     <Compile Include="PipelineConnector.cs" />
     <Compile Include="rrs.cs" />
-    <Compile Include="Tcp\SslTcpClientPipeline.cs" />
+    <Compile Include="Ssl\SslClientPipeline.cs" />
+    <Compile Include="Ssl\SslPipeline.cs" />
+    <Compile Include="Ssl\SslPipelineServer.cs" />
     <Compile Include="Tcp\TcpClientPipeline.cs" />
     <Compile Include="Tcp\TcpPipeline.cs" />
     <Compile Include="Tcp\TcpPipelineServer.cs" />

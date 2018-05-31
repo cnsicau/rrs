@@ -1,17 +1,18 @@
-﻿using System;
+﻿using Rrs.Tcp;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 
-namespace Rrs.Tcp
+namespace Rrs.Ssl
 {
-    public class SslTcpClientPipeline : TcpClientPipeline
+    public class SslClientPipeline : TcpClientPipeline
     {
         private SslStream sslStream;
 
-        public SslTcpClientPipeline(IPAddress address, int port) : base(address, port) { }
+        public SslClientPipeline(IPAddress address, int port) : base(address, port) { }
 
         protected override Stream CreateStream()
         {
@@ -30,8 +31,8 @@ namespace Rrs.Tcp
             }
             catch (Exception e)
             {
+                Trace.WriteLine($"ssl authenticating failed {e}.");
                 callback(this, false, state);
-                Trace.WriteLine($"ssl authenticated failed {e}.");
                 Interrupte();
             }
         }
@@ -48,8 +49,8 @@ namespace Rrs.Tcp
             }
             catch (Exception e)
             {
-                ((PipelineCallback<TState>)args[0])(this, false, (TState)args[1]);
                 Trace.WriteLine($"ssl authenticated failed {e}.");
+                ((PipelineCallback<TState>)args[0])(this, false, (TState)args[1]);
                 Interrupte();
             }
         }
