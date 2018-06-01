@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
 using System.Threading;
@@ -16,6 +17,10 @@ namespace Rrs.Tcp
         private EventHandler interrupted;
         private int interrupting = 0;
         protected string pipelineName;
+        private int outputting = 0;
+
+        private Queue<object[]> outputQueue;
+        private object queueLocker = new object();
 
         public TcpPipeline(Socket socket)
         {
@@ -73,7 +78,6 @@ namespace Rrs.Tcp
             try { GetStream().BeginRead(((IPacket)input).Buffer, 0, Packet.BufferSize, CompleteInput<TState>, new object[] { callback, state }); }
             catch (IOException) { Interrupte(); }
             catch (ObjectDisposedException) { Interrupte(); }
-            catch { Interrupte(); throw; }
         }
 
         void CompleteInput<TState>(IAsyncResult asr)
@@ -91,7 +95,6 @@ namespace Rrs.Tcp
             }
             catch (IOException) { Interrupte(); }
             catch (ObjectDisposedException) { Interrupte(); }
-            catch { Interrupte(); throw; }
         }
 
         void IPipeline.Interrupte() { Interrupte(); }
@@ -100,10 +103,29 @@ namespace Rrs.Tcp
         {
             if (packet.Disposed) throw new InvalidOperationException("packet is disposed.");
 
+            var args = new object[] { callback, packet, state };
+
+            if (Interlocked.Exchange(ref outputting, 1) == 1)
+            {
+                lock (queueLocker)
+                {
+                    if (outputQueue == null) outputQueue = new Queue<object[]>(1);
+                    outputQueue.Enqueue(args);
+                }
+                return;
+            }
+            ExecuteOutput<TState>(args);
+        }
+
+        void ExecuteOutput<TState>(object[] args)
+        {
+            var callback = (IOCompleteCallback<TState>)args[0];
+            var packet = (IPacket)args[1];
+            var state = (TState)args[2];
+
             try { GetStream().BeginWrite(packet.Buffer, 0, packet.Size, CompleteOutput<TState>, new object[] { callback, packet, state }); }
             catch (IOException) { Interrupte(); }
             catch (ObjectDisposedException) { Interrupte(); }
-            catch { Interrupte(); throw; }
         }
 
         void CompleteOutput<TState>(IAsyncResult asr)
@@ -111,11 +133,20 @@ namespace Rrs.Tcp
             try
             {
                 GetStream().EndWrite(asr);
+
                 var args = (object[])asr.AsyncState;
                 ((IOCompleteCallback<TState>)args[0])(this, (IPacket)args[1], (TState)args[2]);
+
+                object[] next = null;
+                lock (queueLocker)
+                {
+                    if (outputQueue != null && outputQueue.Count > 0) next = outputQueue.Dequeue();
+                }
+                if (next == null) Interlocked.Exchange(ref outputting, 0);
+                else ExecuteOutput<TState>(next);
             }
+            catch (IOException) { Interrupte(); }
             catch (ObjectDisposedException) { Interrupte(); }
-            catch { Interrupte(); throw; }
         }
 
         public override string ToString() { return pipelineName; }

@@ -1,20 +1,20 @@
 ﻿using System;
 
-namespace Rrs.Tunnel
+namespace Rrs.Http
 {
-    public class TunnelPipelineServer : IPipelineServer
+    public class HttpPipelineServer : IPipelineServer
     {
-        private readonly IPipelineServer server;
+        IPipelineServer server;
 
-        public TunnelPipelineServer(IPipelineServer server)
+        public HttpPipelineServer(IPipelineServer server)
         {
             this.server = server;
             server.Disposed += OnDisposed;
         }
 
-        void OnDisposed(object sender, EventArgs e) { Disposed?.Invoke(this, e); }
-
         public event EventHandler Disposed;
+
+        void OnDisposed(object sender, EventArgs e) { Disposed?.Invoke(this, e); }
 
         public void Dispose() { server.Dispose(); }
 
@@ -28,7 +28,7 @@ namespace Rrs.Tunnel
             var accept = (PipelineCallback<TState>)args[0];
             var state = (TState)args[1];
 
-            accept(success ? new TunnelPipeline(pipeline) : pipeline, success, state);
+            accept(success ? new HttpPipeline(pipeline) : pipeline, success, state);
         }
     }
 }

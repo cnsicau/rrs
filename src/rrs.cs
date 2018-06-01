@@ -6,6 +6,8 @@ using Rrs.Ssl;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.IO;
+using Rrs.Http;
+using Rrs.Tcp;
 
 namespace Rrs
 {
@@ -39,6 +41,14 @@ namespace Rrs
             tunnelPipeline.Output(packet, CompleteOutput, default(object));
         }
 
+        static void OnAcceptHttp(IPipeline pipeline, bool success, object state)
+        {
+            pipeline.Input((pi, pa, s) =>
+            {
+
+            }, state);
+        }
+
         static void CompleteOutput(IPipeline pipeline, IPacket packet, object state)
         {
             Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} send {(packet as TunnelPacket).Type } {packet.GetType().Name} {packet.Size}B.");
@@ -48,6 +58,9 @@ namespace Rrs
 
         static void Main(string[] args)
         {
+            var http = new HttpPipelineServer(new TcpPipelineServer(IPAddress.Any, 8088, 1));
+            http.Run<object>(OnAcceptHttp);
+
             Console.Write("run as server(y/n) ? ");
 
             if (Console.ReadKey().Key == ConsoleKey.Y)

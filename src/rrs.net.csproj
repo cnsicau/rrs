@@ -41,8 +41,13 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  
   <ItemGroup>
+    <Compile Include="Http\HttpHeader.cs" />
+    <Compile Include="Http\HttpPipeline.cs" />
+    <Compile Include="Http\HttpPipelineServer.cs" />
+    <Compile Include="Http\HttpRequest.cs" />
+    <Compile Include="Http\HttpPacket.cs" />
+    <Compile Include="Http\HttpRequestReader.cs" />
     <Compile Include="IOCompleteCallback.cs" />
     <Compile Include="IPacket.cs" />
     <Compile Include="IPipeline.cs" />
