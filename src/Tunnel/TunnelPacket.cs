@@ -8,7 +8,7 @@
     /// 7 - 9     TYPE   类型    3位  TunnelPacketType 枚举值
     /// 10 - 23   SIZE   长度    14位 1 - 8192
     /// </summary>
-    public class TunnelPacket : Packet
+    public class TunnelPacket : BufferPacket
     {
         public const int HeaderSize = 3;
 

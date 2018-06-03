@@ -13,10 +13,10 @@ namespace Rrs.Tunnel
 
         public TunnelPacketWriter(TunnelPipeline tunnelPipeline)
         {
-            if (Packet.BufferSize < TunnelPacket.HeaderSize)
+            if (BufferPacket.BufferSize < TunnelPacket.HeaderSize)
                 throw new InvalidOperationException($"Packet.BufferSize < {TunnelPacket.HeaderSize}");
             this.tunnelPipeline = tunnelPipeline;
-            transPacket = new Packet(tunnelPipeline);
+            transPacket = new BufferPacket(tunnelPipeline);
         }
 
         public void Write<TState>(IPacket packet, IOCompleteCallback<TState> callback, TState state)
@@ -30,7 +30,7 @@ namespace Rrs.Tunnel
             var packetType = !(packet is TunnelPacket) ? (int)TunnelPacketType.Data : (int)((TunnelPacket)packet).Type;
             PacketHeaderSerializer.Serialize(packetType, packet.Size, transPacket.Buffer);
 
-            var dataSize = Math.Min(Packet.BufferSize - TunnelPacket.HeaderSize, outputPacket.Size);
+            var dataSize = Math.Min(BufferPacket.BufferSize - TunnelPacket.HeaderSize, outputPacket.Size);
             transPacket.Relive(dataSize + TunnelPacket.HeaderSize);
             if (dataSize > 0) // 具备内容
             {
@@ -48,7 +48,7 @@ namespace Rrs.Tunnel
             }
             else // 未完继续
             {
-                var dataSize = Math.Min(Packet.BufferSize, outputPacket.Size - completeSize);
+                var dataSize = Math.Min(BufferPacket.BufferSize, outputPacket.Size - completeSize);
                 Array.Copy(outputPacket.Buffer, completeSize, packet.Buffer, 0, dataSize);
                 transPacket.Relive(dataSize);
                 pipeline.Output(packet, CompleteTransOutput<TState>, dataSize + completeSize);

@@ -12,7 +12,7 @@ namespace Rrs.Tcp
     public class TcpPipeline : IPipeline
     {
         private Stream stream;
-        private readonly Packet input;
+        private readonly BufferPacket input;
         private readonly Socket socket;
         private EventHandler interrupted;
         private int interrupting = 0;
@@ -27,7 +27,7 @@ namespace Rrs.Tcp
             if (socket == null) throw new ArgumentNullException(nameof(socket));
 
             pipelineName = socket.RemoteEndPoint + "=>" + socket.LocalEndPoint;
-            this.input = new Packet(this);
+            this.input = new BufferPacket(this);
             this.socket = socket;
         }
 
@@ -75,7 +75,7 @@ namespace Rrs.Tcp
         {
             if (!input.Disposed) throw new InvalidOperationException("input packet is not disposed.");
 
-            try { GetStream().BeginRead(((IPacket)input).Buffer, 0, Packet.BufferSize, CompleteInput<TState>, new object[] { callback, state }); }
+            try { GetStream().BeginRead(((IPacket)input).Buffer, 0, BufferPacket.BufferSize, CompleteInput<TState>, new object[] { callback, state }); }
             catch (IOException) { Interrupte(); }
             catch (ObjectDisposedException) { Interrupte(); }
         }

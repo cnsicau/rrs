@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Rrs.Http
 {
-    class HttpPipeline : IPipeline
+    public class HttpPipeline : IPipeline
     {
         IPipeline transPipeline;
         HttpRequestReader reader;
@@ -14,26 +14,18 @@ namespace Rrs.Http
         public HttpPipeline(IPipeline transPipeline)
         {
             this.transPipeline = transPipeline;
-            reader = new HttpRequestReader(transPipeline);
+            transPipeline.Interrupted += OnInterrupted;
+            reader = new HttpRequestReader(this);
         }
+
+        private void OnInterrupted(object sender, EventArgs e) { Interrupted?.Invoke(this, e); }
 
         /// <summary>
         /// 底层传输管道
         /// </summary>
         public IPipeline TransPipeline { get { return transPipeline; } }
 
-        event EventHandler IPipeline.Interrupted
-        {
-            add
-            {
-                throw new NotImplementedException();
-            }
-
-            remove
-            {
-                throw new NotImplementedException();
-            }
-        }
+        public event EventHandler Interrupted;
 
         void IDisposable.Dispose() { transPipeline.Dispose(); }
 

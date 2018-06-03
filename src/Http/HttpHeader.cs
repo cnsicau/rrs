@@ -9,14 +9,19 @@ namespace Rrs.Http
     /// </summary>
     public class HttpHeader
     {
-        /// <summary>
-        /// Header 名称
-        /// </summary>
-        public string Name { get; set; }
+        private string name;
+        private string value;
 
-        /// <summary>
-        /// Header 值
-        /// </summary>
-        public string Value { get; set; }
+        public HttpHeader() { }
+
+        public HttpHeader(string name, string value)
+        {
+            this.Name = name;
+            this.Value = value;
+        }
+
+        public string Name { get => name; set => name = value; }
+
+        public string Value { get => value; set => this.value = value; }
     }
 }

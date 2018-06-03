@@ -35,8 +35,8 @@ namespace Rrs
             var data = BitConverter.GetBytes(DateTime.Now.Ticks);
             // 两头两尾包含数据
             Array.Copy(data, ((IPacket)packet).Buffer, data.Length);
-            Array.Copy(data, 0, ((IPacket)packet).Buffer, Packet.BufferSize - data.Length, data.Length);
-            ((IPacket)packet).Relive(Packet.BufferSize);
+            Array.Copy(data, 0, ((IPacket)packet).Buffer, BufferPacket.BufferSize - data.Length, data.Length);
+            ((IPacket)packet).Relive(BufferPacket.BufferSize);
 
             tunnelPipeline.Output(packet, CompleteOutput, default(object));
         }

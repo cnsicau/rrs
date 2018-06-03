@@ -4,23 +4,18 @@ using System.Text;
 
 namespace Rrs.Http
 {
-    public class HttpRequestReader
+    public class HttpRequestReader : HttpReader
     {
-        const int MaxHeadLineSize = 8192;
-        private readonly IPipeline transPipeline;
-        private IPacket currentPacket;
-        private int bufferIndex;
-        private HttpRequest request = new HttpRequest();
+        private readonly HttpRequest request;
 
         private object completeHeader;    // IOCompleteCallback<TState>
         private object state;       // TState
-        private char[] pending = new char[MaxHeadLineSize];
-        private int pendingIndex = 0;
+        private readonly HttpPipeline httpPipeline;
 
-
-        public HttpRequestReader(IPipeline transPipeline)
+        public HttpRequestReader(HttpPipeline httpPipeline) : base(httpPipeline.TransPipeline)
         {
-            this.transPipeline = transPipeline;
+            this.httpPipeline = httpPipeline;
+            request = new HttpRequest(httpPipeline);
         }
 
         public HttpRequest Request { get { return request; } }
@@ -29,118 +24,62 @@ namespace Rrs.Http
         {
             this.completeHeader = completeHeader;
             this.state = state;
-            ReadPaket(ParseProtocol<TState>, (object)null);
+
+            ReadLine(ParseProtocol<TState>, (object)null);
         }
 
-        void ParseProtocol<TState>(IPipeline pipeline, IPacket packet, object args)
+        void ParseProtocol<TState>(char[] buffer, int length, object state)
         {
-            if (bufferIndex < packet.Size) // 已读完，从传输中读取更多数据
+            // 解析  GET  /uri HTTP/1.1
+            var uri = -1;
+            for (int i = 0; i < length; i++)
             {
-                var buffer = packet.Buffer;
-                for (; pendingIndex < MaxHeadLineSize && bufferIndex < packet.Size; bufferIndex++)
+                var chr = buffer[i];
+                if (char.IsWhiteSpace(chr))
                 {
-                    if (buffer[bufferIndex] == '\n' && pendingIndex > 0 && this.pending[pendingIndex - 1] == '\r') // \R\N
+                    if (uri == -1)
                     {
-                        // 解析  GET  /uri HTTP/1.1
-                        var uriIndex = -1;
-                        for (int i = 0; i < pendingIndex - 1; i++)
-                        {
-                            var chr = pending[i];
-                            if (char.IsWhiteSpace(chr))
-                            {
-                                if (uriIndex == -1)
-                                {
-                                    request.Method = new string(pending, 0, i);
-                                    uriIndex = i + 1;
-                                }
-                                else
-                                {
-                                    request.Uri = new string(pending, uriIndex, i - uriIndex);
-                                    request.ProtocolVersion = new string(pending, i + 1, pendingIndex - 1/*\r*/ - i - 1/*space*/);
-                                    break;
-                                }
-                            }
-                        }
-                        bufferIndex++; //将指向跳过 \n
-                        // 解析后续 HEADER
-                        pendingIndex = 0;
-                        ReadPaket(ParseHeader<TState>, new object[0]);
-                        return;
+                        request.Method = new string(buffer, 0, i);
+                        uri = i + 1;
                     }
                     else
                     {
-                        pending[pendingIndex++] = (char)buffer[bufferIndex];
+                        request.Uri = new string(buffer, uri, i - uri);
+                        request.ProtocolVersion = new string(buffer, i + 1, length - i - 1);
+                        break;
                     }
                 }
             }
+            if (uri == -1)
+                throw new InvalidOperationException("invalid protocol.");
 
-            ReadPaket(ParseProtocol<TState>, args);
+            ReadLine(ParseHeader<TState>, default(object));
         }
 
-        void ParseHeader<TState>(IPipeline pipeline, IPacket packet, object[] args)
+        void ParseHeader<TState>(char[] buffer, int length, object state)
         {
-            if (bufferIndex < packet.Size) // 已读完，从传输中读取更多数据
+            if (length == 0)  // 仅解析到 '\r'，说明当前位置为Header 与 Body 间的内容分隔符“空行”
             {
-                var buffer = packet.Buffer;
-                for (; pendingIndex < MaxHeadLineSize && bufferIndex < packet.Size; bufferIndex++)
+                ((IOCompleteCallback<TState>)completeHeader)(pipeline, request, (TState)state); // 信息头解析完成return回调
+                return;
+            }
+            // 解析  HeaderName: HeaderValue 格式的 Header 头
+            for (int i = 0; i < length; i++)
+            {
+                var chr = buffer[i];
+                if (chr == ':')
                 {
-                    if (buffer[bufferIndex] == '\n' && pendingIndex > 0 && this.pending[pendingIndex - 1] == '\r') // \R\N
-                    {
-                        if (pendingIndex == 1)  // 仅解析到 '\r'，说明当前位置为Header 与 Body 间的内容分隔符“空行”
-                        {
-                            ((IOCompleteCallback<TState>)completeHeader)(transPipeline, packet, (TState)state); // 信息头解析完成return回调
-                            bufferIndex++; //将指向跳过 \n
-                            return;
-                        }
-                        // 解析  GET  /uri HTTP/1.1
-                        for (int i = 0; i < pendingIndex - 1; i++)
-                        {
-                            var chr = pending[i];
-                            if (chr == ':')
-                            {
-                                var header = new HttpHeader();
-                                header.Name = new string(pending, 0, i);
-                                header.Value = i == pendingIndex - 1 /*:是末尾结束符*/ ? null : new string(pending, i + 1, pendingIndex - 1/*\r*/ - i - 1/*:*/);
-                                request.Headers.Add(header);
-                                break;
-                            }
-                        }
+                    var name = new string(buffer, 0, i);
+                    var value = i == length - 1 /*:是末尾结束符*/ ? null : new string(buffer, i + 1, length - i - 1);
+                    request.Headers.Add(new HttpHeader(name, value));
 
-                        bufferIndex++; //将指向跳过 \n
-                        // 解析后续 HEADER
-                        pendingIndex = 0;
-                        ReadPaket(ParseHeader<TState>, new object[0]);
-                        return;
-                    }
-                    else
-                    {
-                        pending[pendingIndex++] = (char)buffer[bufferIndex];
-                    }
+                    // 继续读取更多 Header
+                    ReadLine(ParseHeader<TState>, default(object));
+                    return;
                 }
             }
 
-            ReadPaket(ParseHeader<TState>, args);
-        }
-
-        void ReadPaket<TState>(IOCompleteCallback<TState> callback, TState state)
-        {
-            if (currentPacket == null || bufferIndex == currentPacket.Size) // 耗尽或未开始
-            {
-                currentPacket?.Dispose();
-                transPipeline.Input(CompleteReadPacket<TState>, new object[] { callback, state });
-            }
-            else
-            {
-                callback(transPipeline, currentPacket, state);
-            }
-        }
-
-        void CompleteReadPacket<TState>(IPipeline pipeline, IPacket packet, object[] args)
-        {
-            bufferIndex = 0;
-            currentPacket = packet;
-
-            ((IOCompleteCallback<TState>)args[0])(pipeline, packet, (TState)args[1]);
+            throw new InvalidOperationException("Invalid Header :" + new string(buffer, 0, length));
         }
     }
 }

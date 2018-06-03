@@ -2,7 +2,7 @@
 
 namespace Rrs
 {
-    public class Packet : IPacket
+    public class BufferPacket : IPacket
     {
         /// <summary>
         /// 默认包8K
@@ -14,7 +14,7 @@ namespace Rrs
         private readonly IPipeline source;
         private bool disposed = true;
 
-        public Packet(IPipeline source)
+        public BufferPacket(IPipeline source)
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
 
@@ -23,10 +23,12 @@ namespace Rrs
 
         IPipeline IPacket.Source { get { return source; } }
 
-        int IPacket.Size { get { return size; } }
-
-        byte[] IPacket.Buffer { get { return buffer; } }
-
+        bool IPacket.Read<TState>(PacketCallback<TState> callback, TState state)
+        {
+            callback(buffer, size, state);
+            return false;
+        }
+        
         /// <summary>
         /// 设置缓冲区有效数据大小
         /// </summary>

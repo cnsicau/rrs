@@ -13,14 +13,13 @@ namespace Rrs
         IPipeline Source { get; }
 
         /// <summary>
-        /// 包有效数据大小
+        /// 读取内容
         /// </summary>
-        int Size { get; }
-
-        /// <summary>
-        /// 缓冲区
-        /// </summary>
-        byte[] Buffer { get; }
+        /// <typeparam name="TState"></typeparam>
+        /// <param name="callback"></param>
+        /// <param name="state"></param>
+        /// <returns>返回是否完成</returns>
+        bool Read<TState>(PacketCallback<TState> callback, TState state = default(TState));
 
         /// <summary>
         /// 包是否已释放
