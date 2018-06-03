@@ -4,39 +4,34 @@ namespace Rrs
 {
     public class BufferPacket : IPacket
     {
-        /// <summary>
-        /// 默认包8K
-        /// </summary>
-        static public int BufferSize = 8192;
-
         private int size = 0;
-        private readonly byte[] buffer = new byte[BufferSize];
+        private readonly byte[] buffer;
         private readonly IPipeline source;
         private bool disposed = true;
 
-        public BufferPacket(IPipeline source)
+        public BufferPacket(IPipeline source, byte[] buffer)
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
 
+            this.buffer = buffer;
             this.source = source;
         }
 
         IPipeline IPacket.Source { get { return source; } }
 
-        bool IPacket.Read<TState>(PacketCallback<TState> callback, TState state)
+        void IPacket.Read<TState>(PacketCallback<TState> callback, TState state)
         {
             callback(buffer, size, state);
-            return false;
+            size = 0;   // 已读取后，清空缓冲区
         }
-        
+
         /// <summary>
-        /// 设置缓冲区有效数据大小
+        /// 重用包，默认已释放
         /// </summary>
         /// <param name="size"></param>
-        public void Relive(int size)
+        public void SetSize(int size)
         {
-            if (size < 0 || size > BufferSize) throw new IndexOutOfRangeException("size");
-            disposed = false;
+            if (size < 0 || size > buffer.Length) throw new IndexOutOfRangeException("size");
             this.size = size;
         }
 

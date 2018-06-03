@@ -14,6 +14,7 @@ namespace Rrs.Tcp
         private Stream stream;
         private readonly BufferPacket input;
         private readonly Socket socket;
+        private readonly byte[] packetBuffer;
         private EventHandler interrupted;
         private int interrupting = 0;
         protected string pipelineName;
@@ -27,7 +28,8 @@ namespace Rrs.Tcp
             if (socket == null) throw new ArgumentNullException(nameof(socket));
 
             pipelineName = socket.RemoteEndPoint + "=>" + socket.LocalEndPoint;
-            this.input = new BufferPacket(this);
+            packetBuffer = new byte[socket.ReceiveBufferSize];
+            this.input = new BufferPacket(this, packetBuffer);
             this.socket = socket;
         }
 
@@ -75,7 +77,7 @@ namespace Rrs.Tcp
         {
             if (!input.Disposed) throw new InvalidOperationException("input packet is not disposed.");
 
-            try { GetStream().BeginRead(((IPacket)input).Buffer, 0, BufferPacket.BufferSize, CompleteInput<TState>, new object[] { callback, state }); }
+            try { GetStream().BeginRead(packetBuffer, 0, packetBuffer.Length, CompleteInput<TState>, new object[] { callback, state }); }
             catch (IOException) { Interrupte(); }
             catch (ObjectDisposedException) { Interrupte(); }
         }
@@ -88,7 +90,7 @@ namespace Rrs.Tcp
                 if (size == 0) Interrupte();
                 else
                 {
-                    input.Relive(size);
+                    input.SetSize(size);
                     var args = (object[])asr.AsyncState;
                     ((IOCompleteCallback<TState>)args[0])(this, input, (TState)args[1]);
                 }
@@ -103,7 +105,7 @@ namespace Rrs.Tcp
         {
             if (packet.Disposed) throw new InvalidOperationException("packet is disposed.");
 
-            var args = new object[] { callback, packet, state };
+            var args = new object[] { callback, packet, state, 0 };
 
             if (Interlocked.Exchange(ref outputting, 1) == 1)
             {
@@ -114,16 +116,19 @@ namespace Rrs.Tcp
                 }
                 return;
             }
-            ExecuteOutput<TState>(args);
+
+            packet.Read(OutputPacket<TState>, args);
         }
 
-        void ExecuteOutput<TState>(object[] args)
+        void OutputPacket<TState>(byte[] buffer, int size, object[] args)
         {
             var callback = (IOCompleteCallback<TState>)args[0];
             var packet = (IPacket)args[1];
             var state = (TState)args[2];
 
-            try { GetStream().BeginWrite(packet.Buffer, 0, packet.Size, CompleteOutput<TState>, new object[] { callback, packet, state }); }
+            args[3] = size; // 保存 Size
+
+            try { GetStream().BeginWrite(buffer, 0, size, CompleteOutput<TState>, args); }
             catch (IOException) { Interrupte(); }
             catch (ObjectDisposedException) { Interrupte(); }
         }
@@ -135,6 +140,12 @@ namespace Rrs.Tcp
                 GetStream().EndWrite(asr);
 
                 var args = (object[])asr.AsyncState;
+                if ((int)args[3] > 0)   // 包内容未完继续
+                {
+                    ((IPacket)args[1]).Read(OutputPacket<TState>, args);
+                    return;
+                }
+
                 ((IOCompleteCallback<TState>)args[0])(this, (IPacket)args[1], (TState)args[2]);
 
                 object[] next = null;
@@ -143,7 +154,8 @@ namespace Rrs.Tcp
                     if (outputQueue != null && outputQueue.Count > 0) next = outputQueue.Dequeue();
                 }
                 if (next == null) Interlocked.Exchange(ref outputting, 0);
-                else ExecuteOutput<TState>(next);
+
+                ((IPacket)args[1]).Read(OutputPacket<TState>, next);
             }
             catch (IOException) { Interrupte(); }
             catch (ObjectDisposedException) { Interrupte(); }

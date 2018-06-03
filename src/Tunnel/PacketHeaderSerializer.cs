@@ -28,7 +28,7 @@
         /// <param name="tunnelPacket"></param>
         public static void Deserialize(byte[] buffer, TunnelPacket tunnelPacket)
         {
-            ((IPacket)tunnelPacket).Relive(((buffer[1] & 0x3f) << 8) | buffer[2]);
+            ((IPacket)tunnelPacket).Reuse(((buffer[1] & 0x3f) << 8) | buffer[2]);
             tunnelPacket.Type = (TunnelPacketType)((buffer[1] >> 6) | (buffer[0] & 1) << 2);
             tunnelPacket.Version = (0x7 & (buffer[0] >> 1));
             tunnelPacket.Magic = buffer[0] >> 4;

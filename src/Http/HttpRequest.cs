@@ -6,8 +6,10 @@ namespace Rrs.Http
 {
     public class HttpRequest : IPacket
     {
-        private IList<HttpHeader> headers;
-        private IPipeline source;
+        private readonly IList<HttpHeader> headers;
+        private readonly IPipeline source;
+
+        private bool disposed;
 
         public HttpRequest(IPipeline source)
         {
@@ -54,17 +56,22 @@ namespace Rrs.Http
 
         #region Packet Members
 
+        void IPacket.Read<TState>(PacketCallback<TState> callback, TState state)
+        {
+            throw new NotImplementedException();
+        }
+
         IPipeline IPacket.Source { get { return source; } }
 
-        int IPacket.Size { get { return this.ContentLength; } }
+        bool IPacket.Disposed { get { return disposed; } }
 
-        byte[] IPacket.Buffer => throw new NotImplementedException();
-
-        bool IPacket.Disposed => throw new NotImplementedException();
-
-        void IDisposable.Dispose() { }
-
-        void IPacket.Relive(int size) { ContentLength = size; }
+        void IDisposable.Dispose()
+        {
+            if (disposed)
+            {
+                disposed = true;
+            }
+        }
 
         #endregion
     }

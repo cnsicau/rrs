@@ -42,13 +42,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Http\HttpHeader.cs" />
-    <Compile Include="Http\HttpPipeline.cs" />
-    <Compile Include="Http\HttpPipelineServer.cs" />
-    <Compile Include="Http\HttpReader.cs" />
-    <Compile Include="Http\HttpRequest.cs" />
-    <Compile Include="Http\HttpRequestReader.cs" />
-    <Compile Include="Http\HttpResponse.cs" />
     <Compile Include="IOCompleteCallback.cs" />
     <Compile Include="IPacket.cs" />
     <Compile Include="IPipeline.cs" />
@@ -64,13 +57,6 @@
     <Compile Include="Tcp\TcpClientPipeline.cs" />
     <Compile Include="Tcp\TcpPipeline.cs" />
     <Compile Include="Tcp\TcpPipelineServer.cs" />
-    <Compile Include="Tunnel\PacketHeaderSerializer.cs" />
-    <Compile Include="Tunnel\TunnelPacket.cs" />
-    <Compile Include="Tunnel\TunnelPacketReader.cs" />
-    <Compile Include="Tunnel\TunnelPacketType.cs" />
-    <Compile Include="Tunnel\TunnelPacketWriter.cs" />
-    <Compile Include="Tunnel\TunnelPipeline.cs" />
-    <Compile Include="Tunnel\TunnelPipelineServer.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

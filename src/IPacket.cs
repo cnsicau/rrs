@@ -19,17 +19,12 @@ namespace Rrs
         /// <param name="callback"></param>
         /// <param name="state"></param>
         /// <returns>返回是否完成</returns>
-        bool Read<TState>(PacketCallback<TState> callback, TState state = default(TState));
+        void Read<TState>(PacketCallback<TState> callback, TState state = default(TState));
 
         /// <summary>
-        /// 包是否已释放
+        /// 包是否已使用完毕
+        ///     using(packet) { ... }
         /// </summary>
         bool Disposed { get; }
-
-        /// <summary>
-        /// 激活数据包
-        /// </summary>
-        /// <param name="size">数据大小</param>
-        void Relive(int size);
     }
 }

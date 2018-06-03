@@ -39,6 +39,7 @@ namespace Rrs
         }
 
         void TargetInterrupted(object sender, EventArgs e) { using (this) source.Interrupte(); }
+
         void SourceInterrupted(object sender, EventArgs e) { using (this) target.Interrupte(); }
 
         void CompleteInput(IPipeline input, IPacket packet, IPipeline output)
