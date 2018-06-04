@@ -6,7 +6,6 @@ using Rrs.Ssl;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.IO;
-using Rrs.Tcp;
 
 namespace Rrs
 {
@@ -21,28 +20,29 @@ namespace Rrs
 
         static void CompleteInput(IPipeline pipeline, IPacket packet, object state)
         {
-            Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} receive {(packet as TunnelPacket).Type } {packet.GetType().Name}.");
+            Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} receive {packet?.GetType().Name}.");
+            packet.Read(CompleteRead, pipeline);
+        }
 
-            pipeline.Input<object>(CompleteInput);
+        static void CompleteRead(PacketData data, IPipeline pipeline)
+        {
+            if (data.Completed)
+                pipeline.Input<object>(CompleteInput);
+            else
+                Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} read {data.Size}B.");
         }
 
         static void OnConnect(IPipeline pipeline, bool success, TunnelPipeline tunnelPipeline)
         {
-            var packet = TunnelPacket.CreateCommandPacket(tunnelPipeline, TunnelPacketType.Actived);
+            var packet = new BufferPacket(pipeline, new byte[] { 1, 2, 3 });
+            packet.SetBufferSize(3);
             tunnelPipeline.Output(packet, CompleteOutput, default(object));
-        }
-
-        static void OnAcceptHttp(IPipeline pipeline, bool success, object state)
-        {
-            pipeline.Input((pi, pa, s) =>
-            {
-
-            }, state);
         }
 
         static void CompleteOutput(IPipeline pipeline, IPacket packet, object state)
         {
-            Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} send {(packet as TunnelPacket).Type } {packet.GetType().Name}..");
+            Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} send {(packet as TunnelPacket)?.Type.ToString() ?? "Data" } {packet.GetType().Name}..");
+
             Thread.Sleep(50);
             pipeline.Output(packet, CompleteOutput, state);
         }

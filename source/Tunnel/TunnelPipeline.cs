@@ -30,7 +30,7 @@ namespace Rrs.Tunnel
 
         public void Input<TState>(IOCallback<TState> callback, TState state = default(TState))
         {
-            inputPacket.Build(callback, state);
+            inputPacket.Construct(callback, state);
         }
 
         public void Interrupte()
@@ -43,24 +43,21 @@ namespace Rrs.Tunnel
         public void Output<TState>(IPacket packet, IOCallback<TState> callback, TState state = default(TState))
         {
             var args = new object[] { packet, callback, state };
-            if (packet is TunnelPacket)
-            {
-                ((TunnelPacket)packet).ReadHeader(OutputHeader<TState>, args);
-            }
-            else
-            {
-                TransPipeline.Output(packet, OnContentOutput<TState>, args);
-            }
+            var tunnelPacket = packet as TunnelPacket;
+            if (tunnelPacket == null)
+                tunnelPacket = new OutputTunnelPacket(this, TunnelPacketType.Data, packet);
+
+            tunnelPacket.ReadHeader(OutputHeader<TState>, args);
         }
 
-        void OutputHeader<TState>(byte[] buffer, int size, object[] args)
+        void OutputHeader<TState>(PacketData data, object[] args)
         {
-            if (size != TunnelPacket.HeaderSize) throw new InvalidOperationException("invalid header size.");
+            if (data.Size != TunnelPacket.HeaderSize) throw new InvalidOperationException("invalid header size.");
 
-            var header = new BufferPacket(this, buffer);
-            header.SetBufferSize(size);
+            var header = new BufferPacket(this, data.Buffer);
+            header.SetBufferSize(data.Size);
 
-            TransPipeline.Output(header, OnContentOutput<TState>, args);
+            TransPipeline.Output(header, OnHeaderOutput<TState>, args);
         }
 
         void OnHeaderOutput<TState>(IPipeline pipeline, IPacket packet, object[] args)

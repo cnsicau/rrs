@@ -67,12 +67,11 @@ namespace Rrs.Tcp
         /// Packet Read回调，用于准备数据并发送到流
         /// </summary>
         /// <typeparam name="TState"></typeparam>
-        /// <param name="buffer"></param>
-        /// <param name="size"></param>
+        /// <param name="data"></param>
         /// <param name="args"></param>
-        private void OnRead<TState>(byte[] buffer, int size, object[] args)
+        private void OnRead<TState>(PacketData data, object[] args)
         {
-            if (size <= 0)
+            if (data.Completed)
             {
                 ((IOCallback<TState>)args[1])(this, (IPacket)args[0], (TState)args[2]);
             }
@@ -80,7 +79,7 @@ namespace Rrs.Tcp
             {
                 try
                 {
-                    Stream.BeginWrite(buffer, 0, size, CompleteOutput<TState>, args);
+                    Stream.BeginWrite(data.Buffer, 0, data.Size, CompleteOutput<TState>, args);
                 }
                 catch (IOException) { Interrupte(); }
                 catch (ObjectDisposedException) { }

@@ -39,6 +39,7 @@
     <Compile Include="IPacket.cs" />
     <Compile Include="IPipeline.cs" />
     <Compile Include="IPipelineServer.cs" />
+    <Compile Include="PacketData.cs" />
     <Compile Include="PipelineConnector.cs" />
     <Compile Include="ReadCallback.cs" />
     <Compile Include="ConnectCallback.cs" />
@@ -51,12 +52,14 @@
     <Compile Include="Tcp\TcpPipelineServer.cs" />
     <Compile Include="Tunnel\InputTunnelPacket.cs" />
     <Compile Include="Tunnel\HeaderSerializer.cs" />
+    <Compile Include="Tunnel\OutputTunnelPacket.cs" />
     <Compile Include="Tunnel\TunnelPacket.cs" />
     <Compile Include="Tunnel\TunnelPacketType.cs" />
     <Compile Include="Tunnel\TunnelPipeline.cs" />
     <Compile Include="Tunnel\TunnelPipelineServer.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="project.json" />
     <None Include="ssl.pfx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

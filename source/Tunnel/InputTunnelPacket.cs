@@ -23,7 +23,7 @@ namespace Rrs.Tunnel
         /// <typeparam name="TState"></typeparam>
         /// <param name="callback"></param>
         /// <param name="state"></param>
-        public void Build<TState>(IOCallback<TState> callback, TState state)
+        public void Construct<TState>(IOCallback<TState> callback, TState state)
         {
             for (; headerSize < HeaderSize && sourceOffset < sourceSize; headerSize++)
             {
@@ -42,6 +42,7 @@ namespace Rrs.Tunnel
                 trans.Interrupte();
 
             length = Length;
+            callback(Source, this, state);
         }
 
         void ReadMoreData<TState>(object[] args)
@@ -56,26 +57,26 @@ namespace Rrs.Tunnel
             packet.Read(OnHeaderPacketRead<TState>, args);
         }
 
-        void OnHeaderPacketRead<TState>(byte[] buffer, int size, object[] args)
+        void OnHeaderPacketRead<TState>(PacketData data, object[] args)
         {
-            if (size == 0) // 当前包已使用完
+            if (data.Completed) // 当前包已使用完
             {
                 packet.Dispose();
                 trans.Input(OnHeaderInput<TState>, args);
                 return;
             }
-            source = buffer;
-            sourceSize = size;
+            source = data.Buffer;
+            sourceSize = data.Size;
             sourceOffset = 0;
 
-            Build((IOCallback<TState>)args[0], (TState)args[1]);
+            Construct((IOCallback<TState>)args[0], (TState)args[1]);
         }
 
         public override void Read<TState>(ReadCallback<TState> callback, TState state = default(TState))
         {
             if (length == 0) // 无数据内容直接返回
             {
-                callback(source, 0, state);
+                callback(new PacketData(this), state);
                 return;
             }
             if (sourceOffset == sourceSize) // 已读取完加载后续包
@@ -93,7 +94,7 @@ namespace Rrs.Tunnel
             var dataSize = length > sourceSize ? sourceSize : length;
             length -= dataSize;
             sourceOffset = dataSize;
-            callback(source, dataSize, state);
+            callback(new PacketData(this, source, dataSize), state);
         }
         void OnDataInput<TState>(IPipeline pipeline, IPacket packet, object[] args)
         {
@@ -101,16 +102,16 @@ namespace Rrs.Tunnel
             packet.Read(OnDataPacketRead<TState>, args);
         }
 
-        void OnDataPacketRead<TState>(byte[] buffer, int size, object[] args)
+        void OnDataPacketRead<TState>(PacketData data, object[] args)
         {
-            if (size == 0) // 当前包已使用完
+            if (data.Completed) // 当前包已使用完
             {
                 packet.Dispose();
                 trans.Input(OnDataInput<TState>, args);
                 return;
             }
-            source = buffer;
-            sourceSize = size;
+            source = data.Buffer;
+            sourceSize = data.Size;
             sourceOffset = 0;
 
             Read((ReadCallback<TState>)args[0], (TState)args[1]);   // 继续读取内容
@@ -118,7 +119,7 @@ namespace Rrs.Tunnel
 
         public override void ReadHeader<TState>(ReadCallback<TState> callback, TState state = default(TState))
         {
-            callback(header, HeaderSize, state);
+            callback(new PacketData(this), state);
         }
 
         public override void Dispose()
