@@ -15,7 +15,7 @@ namespace Rrs
         {
             if (!success) return;
 
-            pipeline.Input<object>(CompleteInput);
+            ((TunnelPipeline)pipeline).TransPipeline.Input<object>(CompleteInput);
         }
 
         static void CompleteInput(IPipeline pipeline, IPacket packet, object state)
@@ -42,8 +42,7 @@ namespace Rrs
         static void CompleteOutput(IPipeline pipeline, IPacket packet, object state)
         {
             Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} send {(packet as TunnelPacket)?.Type.ToString() ?? "Data" } {packet.GetType().Name}..");
-            
-            Thread.Sleep(50);
+            Thread.Sleep(50000);
             pipeline.Output(packet, CompleteOutput, state);
         }
 
@@ -68,8 +67,8 @@ namespace Rrs
                 client.Connect(OnConnect, tunnelClient);
             }
 
-            Console.WriteLine("\nAny key to exit.");
-            Console.ReadKey(true);
+            Console.WriteLine("\npress ESC to exit.");
+            while (Console.ReadKey(true).Key != ConsoleKey.Escape) ;
         }
 
         static string ReadPassword()

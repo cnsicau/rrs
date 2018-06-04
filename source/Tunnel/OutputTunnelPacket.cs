@@ -26,6 +26,7 @@ namespace Rrs.Tunnel
 
         public override void Read<TState>(ReadCallback<TState> callback, TState state = default(TState))
         {
+            data.Dispose();
             callback(data ?? new PacketData(this), state);
         }
 

@@ -1,13 +1,15 @@
-﻿namespace Rrs
+﻿using System;
+
+namespace Rrs
 {
     /// <summary>
     /// 包数据
     /// </summary>
-    public class PacketData
+    public class PacketData : IDisposable
     {
         private readonly IPacket packet;
         private readonly byte[] buffer;
-        private readonly int size;
+        private int size;
 
         /// <summary>
         /// 构造
@@ -47,5 +49,7 @@
         /// 完结
         /// </summary>
         public bool Completed { get { return size <= 0; } }
+
+        public void Dispose() { size = 0; }
     }
 }

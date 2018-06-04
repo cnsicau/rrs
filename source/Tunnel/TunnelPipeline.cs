@@ -59,6 +59,7 @@ namespace Rrs.Tunnel
         {
             if (data.Completed)
             {
+                data.Packet.Dispose();
                 ((IOCallback<TState>)args[1])(this, data.Packet, (TState)args[2]);
             }
             else
