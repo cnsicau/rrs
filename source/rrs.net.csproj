@@ -1,0 +1,68 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{92C305C3-70CD-4C8E-9DAA-2040E2404C08}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Rrs</RootNamespace>
+    <AssemblyName>rrs</AssemblyName>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="BufferPacket.cs" />
+    <Compile Include="IOCallback.cs" />
+    <Compile Include="IPacket.cs" />
+    <Compile Include="IPipeline.cs" />
+    <Compile Include="IPipelineServer.cs" />
+    <Compile Include="PipelineConnector.cs" />
+    <Compile Include="ReadCallback.cs" />
+    <Compile Include="ConnectCallback.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Ssl\SslClientPipeline.cs" />
+    <Compile Include="Ssl\SslPipeline.cs" />
+    <Compile Include="Ssl\SslPipelineServer.cs" />
+    <Compile Include="Tcp\TcpClientPipeline.cs" />
+    <Compile Include="Tcp\TcpPipeline.cs" />
+    <Compile Include="Tcp\TcpPipelineServer.cs" />
+    <Compile Include="Tunnel\InputTunnelPacket.cs" />
+    <Compile Include="Tunnel\PacketHeaderSerializer.cs" />
+    <Compile Include="Tunnel\TunnelPacket.cs" />
+    <Compile Include="Tunnel\TunnelPacketType.cs" />
+    <Compile Include="Tunnel\TunnelPipeline.cs" />
+    <Compile Include="Tunnel\TunnelPipelineServer.cs" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
