@@ -61,6 +61,7 @@ namespace Rrs.Tunnel
         {
             if (data.Completed) // 当前包已使用完
             {
+                headerSize = 0;
                 packet.Dispose();
                 trans.Input(OnHeaderInput<TState>, args);
                 return;
@@ -81,6 +82,7 @@ namespace Rrs.Tunnel
             }
             if (sourceOffset == sourceSize) // 已读取完加载后续包
             {
+                packet.Dispose();
                 trans.Input(OnDataInput<TState>, new object[] { callback, state });
                 return;
             }

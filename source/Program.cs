@@ -42,7 +42,7 @@ namespace Rrs
         static void CompleteOutput(IPipeline pipeline, IPacket packet, object state)
         {
             Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} send {(packet as TunnelPacket)?.Type.ToString() ?? "Data" } {packet.GetType().Name}..");
-
+            
             Thread.Sleep(50);
             pipeline.Output(packet, CompleteOutput, state);
         }

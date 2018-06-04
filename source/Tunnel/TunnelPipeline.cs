@@ -7,6 +7,7 @@ namespace Rrs.Tunnel
         private readonly IPipeline pipeline;
         private readonly InputTunnelPacket inputPacket;
         private bool interrupted = false;
+        private byte[] header = new byte[TunnelPacket.HeaderSize];
 
         public TunnelPipeline(IPipeline pipeline)
         {
@@ -43,11 +44,33 @@ namespace Rrs.Tunnel
         public void Output<TState>(IPacket packet, IOCallback<TState> callback, TState state = default(TState))
         {
             var args = new object[] { packet, callback, state };
-            var tunnelPacket = packet as TunnelPacket;
-            if (tunnelPacket == null)
-                tunnelPacket = new OutputTunnelPacket(this, TunnelPacketType.Data, packet);
 
-            tunnelPacket.ReadHeader(OutputHeader<TState>, args);
+            if (packet is TunnelPacket)
+            {
+                ((TunnelPacket)packet).ReadHeader(OutputHeader<TState>, args);
+            }
+            else
+            {
+                packet.Read(OnNormalRead<TState>, args);
+            }
+        }
+
+        void OnNormalRead<TState>(PacketData data, object[] args)
+        {
+            if (data.Completed)
+            {
+                ((IOCallback<TState>)args[1])(this, data.Packet, (TState)args[2]);
+            }
+            else
+            {
+                var tunnelPacket = new OutputTunnelPacket(this, header, TunnelPacketType.Data, data);
+                Output(tunnelPacket, CompleteNormarlOutput<TState>, args);
+            }
+        }
+
+        void CompleteNormarlOutput<TState>(IPipeline source, IPacket packet, object[] args)
+        {
+            ((IPacket)args[0]).Read(OnNormalRead<TState>, args);
         }
 
         void OutputHeader<TState>(PacketData data, object[] args)
