@@ -50,13 +50,17 @@
     <Compile Include="Tcp\TcpPipeline.cs" />
     <Compile Include="Tcp\TcpPipelineServer.cs" />
     <Compile Include="Tunnel\InputTunnelPacket.cs" />
-    <Compile Include="Tunnel\PacketHeaderSerializer.cs" />
+    <Compile Include="Tunnel\HeaderSerializer.cs" />
     <Compile Include="Tunnel\TunnelPacket.cs" />
     <Compile Include="Tunnel\TunnelPacketType.cs" />
     <Compile Include="Tunnel\TunnelPipeline.cs" />
     <Compile Include="Tunnel\TunnelPipelineServer.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="ssl.pfx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

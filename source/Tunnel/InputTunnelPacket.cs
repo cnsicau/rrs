@@ -36,7 +36,7 @@ namespace Rrs.Tunnel
                 return;
             }
 
-            PacketHeaderSerializer.Deserialize(header, this);
+            HeaderSerializer.Deserialize(header, this);
             // 检查报文有效性
             if (Magic != MagicValue || Version != VersionValue)
                 trans.Interrupte();
@@ -73,17 +73,23 @@ namespace Rrs.Tunnel
 
         public override void Read<TState>(ReadCallback<TState> callback, TState state = default(TState))
         {
+            if (length == 0) // 无数据内容直接返回
+            {
+                callback(source, 0, state);
+                return;
+            }
             if (sourceOffset == sourceSize) // 已读取完加载后续包
             {
                 trans.Input(OnDataInput<TState>, new object[] { callback, state });
                 return;
             }
-            else if (sourceOffset > 0)
+            // 将可用缓冲区移至起始位置
+            if (sourceOffset > 0)
             {
                 sourceSize -= sourceOffset;
-                Array.Copy(source, sourceOffset, source, 0, sourceSize);    // 将缓冲区对齐至0
+                Array.Copy(source, sourceOffset, source, 0, sourceSize);
             }
-
+            // 获取数据块大小
             var dataSize = length > sourceSize ? sourceSize : length;
             length -= dataSize;
             sourceOffset = dataSize;
@@ -108,6 +114,11 @@ namespace Rrs.Tunnel
             sourceOffset = 0;
 
             Read((ReadCallback<TState>)args[0], (TState)args[1]);   // 继续读取内容
+        }
+
+        public override void ReadHeader<TState>(ReadCallback<TState> callback, TState state = default(TState))
+        {
+            callback(header, HeaderSize, state);
         }
 
         public override void Dispose()

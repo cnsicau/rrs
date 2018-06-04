@@ -6,14 +6,12 @@ namespace Rrs.Tunnel
     {
         private readonly IPipeline pipeline;
         private readonly InputTunnelPacket inputPacket;
-        //private readonly TunnelPacketWriter writer;
         private bool interrupted = false;
 
         public TunnelPipeline(IPipeline pipeline)
         {
             this.pipeline = pipeline;
             inputPacket = new InputTunnelPacket(this);
-            //writer = new TunnelPacketWriter(this);
             pipeline.Interrupted += OnInterrupted;
         }
 
@@ -39,15 +37,41 @@ namespace Rrs.Tunnel
         {
             if (interrupted) return;
 
-            //pipeline.Output()
-
             pipeline.Interrupte();
         }
 
         public void Output<TState>(IPacket packet, IOCallback<TState> callback, TState state = default(TState))
         {
-            throw new NotImplementedException();
-            //writer.Write(packet, callback, state);
+            var args = new object[] { packet, callback, state };
+            if (packet is TunnelPacket)
+            {
+                ((TunnelPacket)packet).ReadHeader(OutputHeader<TState>, args);
+            }
+            else
+            {
+                TransPipeline.Output(packet, OnContentOutput<TState>, args);
+            }
+        }
+
+        void OutputHeader<TState>(byte[] buffer, int size, object[] args)
+        {
+            if (size != TunnelPacket.HeaderSize) throw new InvalidOperationException("invalid header size.");
+
+            var header = new BufferPacket(this, buffer);
+            header.SetBufferSize(size);
+
+            TransPipeline.Output(header, OnContentOutput<TState>, args);
+        }
+
+        void OnHeaderOutput<TState>(IPipeline pipeline, IPacket packet, object[] args)
+        {
+            packet = (IPacket)args[0]; // Data
+            TransPipeline.Output(packet, OnContentOutput<TState>, args);
+        }
+
+        void OnContentOutput<TState>(IPipeline pipeline, IPacket packet, object[] args)
+        {
+            ((IOCallback<TState>)args[1])(this, packet, (TState)args[2]);
         }
     }
 }

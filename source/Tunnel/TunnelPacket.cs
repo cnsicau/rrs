@@ -1,4 +1,7 @@
-﻿namespace Rrs.Tunnel
+﻿using System;
+using System.Collections.Generic;
+
+namespace Rrs.Tunnel
 {
     /// <summary>
     /// 信息头说明
@@ -10,6 +13,58 @@
     /// </summary>
     public abstract class TunnelPacket : IPacket
     {
+        #region Inner Class
+        class CommandPacket : TunnelPacket
+        {
+            static readonly Dictionary<TunnelPacketType, byte[]> headers = new Dictionary<TunnelPacketType, byte[]>(7)
+            {
+                { TunnelPacketType.Authenticate, GenerateHeaderBytes(TunnelPacketType.Authenticate) },
+                { TunnelPacketType.Ping, GenerateHeaderBytes(TunnelPacketType.Ping) },
+                { TunnelPacketType.Pong, GenerateHeaderBytes(TunnelPacketType.Pong) },
+                { TunnelPacketType.Active, GenerateHeaderBytes(TunnelPacketType.Active) },
+                { TunnelPacketType.Actived, GenerateHeaderBytes(TunnelPacketType.Actived) },
+                { TunnelPacketType.Terminate, GenerateHeaderBytes(TunnelPacketType.Terminate) },
+            };
+
+            static byte[] GenerateHeaderBytes(TunnelPacketType type)
+            {
+                var bytes = new byte[HeaderSize];
+                HeaderSerializer.Serialize((int)type, 0, bytes);
+                return bytes;
+            }
+
+            TunnelPacketType type;
+
+            public CommandPacket(TunnelPipeline pipeline, TunnelPacketType type) : base(pipeline)
+            {
+                this.type = type;
+            }
+
+            public override void Read<TState>(ReadCallback<TState> callback, TState state = default(TState))
+            {
+                callback(headers[type], 0, state); // 无内容
+            }
+
+            public override void ReadHeader<TState>(ReadCallback<TState> callback, TState state = default(TState))
+            {
+                callback(headers[type], HeaderSize, state);
+            }
+        }
+
+        /// <summary>
+        /// 创建命令类型数据包（除Data外)
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        static public TunnelPacket CreateCommandPacket(TunnelPipeline source, TunnelPacketType type)
+        {
+            if (type == TunnelPacketType.Data) throw new NotSupportedException(type.ToString());
+
+            return new CommandPacket(source, type);
+        }
+        #endregion
+
         public const int HeaderSize = 3;
 
         public const int MagicValue = 15;       // 1111
@@ -84,6 +139,14 @@
         /// <param name="callback"></param>
         /// <param name="state"></param>
         public abstract void Read<TState>(ReadCallback<TState> callback, TState state = default(TState));
+
+        /// <summary>
+        /// 读取信息头
+        /// </summary>
+        /// <typeparam name="TState"></typeparam>
+        /// <param name="callback"></param>
+        /// <param name="state"></param>
+        public abstract void ReadHeader<TState>(ReadCallback<TState> callback, TState state = default(TState));
 
         /// <summary>
         /// 释放资源

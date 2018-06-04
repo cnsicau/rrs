@@ -13,14 +13,27 @@ namespace Rrs
         private readonly IPipeline source;
         private bool disposed = true;
 
-        public BufferPacket(IPipeline source, int bufferSize)
+        /// <summary>
+        /// 指定内容构建
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="buffer"></param>
+        public BufferPacket(IPipeline source, byte[] buffer)
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
-
-            this.buffer = new byte[bufferSize];
+            if (buffer == null)
+                throw new ArgumentNullException(nameof(buffer));
             this.source = source;
+            this.buffer = buffer;
         }
+
+        /// <summary>
+        /// 指定大小构建
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="bufferSize"></param>
+        public BufferPacket(IPipeline source, int bufferSize) : this(source, new byte[bufferSize]) { }
 
         IPipeline IPacket.Source { get { return source; } }
 

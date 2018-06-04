@@ -8,16 +8,19 @@
     /// 7 - 9     TYPE   类型    3位  TunnelPacketType 枚举值
     /// 10 - 23   SIZE   长度    14位 1 - 8192
     /// </summary>
-    public class PacketHeaderSerializer
+    public class HeaderSerializer
     {
-
-        private static readonly byte firstByte = (TunnelPacket.MagicValue << 4) + (TunnelPacket.VersionValue << 1);
-
+        /// <summary>
+        /// 序列化内容至缓冲区前3字节
+        /// </summary>
+        /// <param name="packetType"></param>
+        /// <param name="dataSize"></param>
+        /// <param name="buffer"></param>
         public static void Serialize(int packetType, int dataSize, byte[] buffer)
         {
             buffer[2] = (byte)(dataSize & 0xff);
             buffer[1] = (byte)((dataSize >> 8) | ((0x7 & packetType) << 6));
-            buffer[0] = (byte)(firstByte | (packetType >> 2));
+            buffer[0] = (byte)((TunnelPacket.MagicValue << 4) | (TunnelPacket.VersionValue << 1) | (packetType >> 2));
         }
 
         /// <summary>
@@ -25,13 +28,13 @@
         /// </summary>
         /// <param name="buffer"></param>
         /// <param name="offset"></param>
-        /// <param name="tunnelPacket"></param>
-        public static void Deserialize(byte[] buffer, TunnelPacket tunnelPacket)
+        /// <param name="packet"></param>
+        public static void Deserialize(byte[] buffer, TunnelPacket packet)
         {
-            tunnelPacket.Length = ((buffer[1] & 0x3f) << 8) | buffer[2];
-            tunnelPacket.Type = (TunnelPacketType)((buffer[1] >> 6) | (buffer[0] & 1) << 2);
-            tunnelPacket.Version = (0x7 & (buffer[0] >> 1));
-            tunnelPacket.Magic = buffer[0] >> 4;
+            packet.Length = ((buffer[1] & 0x3f) << 8) | buffer[2];
+            packet.Type = (TunnelPacketType)((buffer[1] >> 6) | (buffer[0] & 1) << 2);
+            packet.Version = (0x7 & (buffer[0] >> 1));
+            packet.Magic = buffer[0] >> 4;
         }
     }
 }
