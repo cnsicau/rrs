@@ -15,21 +15,32 @@ namespace Rrs
         {
             if (!success) return;
 
-            ((TunnelPipeline)pipeline).TransPipeline.Input<object>(CompleteInput);
+            pipeline.Input<object>(CompleteInput);
         }
 
         static void CompleteInput(IPipeline pipeline, IPacket packet, object state)
         {
-            Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} receive {packet?.GetType().Name}.");
+            Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} receive { (packet as TunnelPacket)?.Type } {packet?.GetType().Name}.");
             packet.Read(CompleteRead, pipeline);
         }
 
         static void CompleteRead(PacketData data, IPipeline pipeline)
         {
             if (data.Completed)
+            {
+                data.Packet.Dispose();
                 pipeline.Input<object>(CompleteInput);
+            }
             else
-                Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} read {data.Size}B.");
+            {
+                Console.Write($"{DateTime.Now:HH:mm:ss.fff} read {data.Size}B:\t");
+                for (int i = 0; i < data.Size && i < 10; i++)
+                {
+                    Console.Write("{0, 3:x2}", data.Buffer[i]);
+                }
+                Console.WriteLine();
+                data.Packet.Read(CompleteRead, pipeline);
+            }
         }
 
         static void OnConnect(IPipeline pipeline, bool success, TunnelPipeline tunnelPipeline)
@@ -42,7 +53,8 @@ namespace Rrs
         static void CompleteOutput(IPipeline pipeline, IPacket packet, object state)
         {
             Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} send {(packet as TunnelPacket)?.Type.ToString() ?? "Data" } {packet.GetType().Name}..");
-            Thread.Sleep(50000);
+            Thread.Sleep(1000);
+            ((BufferPacket)packet).SetBufferSize(3);
             pipeline.Output(packet, CompleteOutput, state);
         }
 

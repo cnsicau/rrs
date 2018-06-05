@@ -57,6 +57,7 @@
     <Compile Include="Tunnel\TunnelPacketType.cs" />
     <Compile Include="Tunnel\TunnelPipeline.cs" />
     <Compile Include="Tunnel\TunnelPipelineServer.cs" />
+    <Compile Include="Tunnel\TunnelWriter.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="project.json" />

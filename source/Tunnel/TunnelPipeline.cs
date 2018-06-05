@@ -43,56 +43,9 @@ namespace Rrs.Tunnel
 
         public void Output<TState>(IPacket packet, IOCallback<TState> callback, TState state = default(TState))
         {
-            var args = new object[] { packet, callback, state };
+            if (packet.Disposed) throw new InvalidOperationException("packet is disposed.");
 
-            if (packet is TunnelPacket)
-            {
-                ((TunnelPacket)packet).ReadHeader(OutputHeader<TState>, args);
-            }
-            else
-            {
-                packet.Read(OnNormalRead<TState>, args);
-            }
-        }
-
-        void OnNormalRead<TState>(PacketData data, object[] args)
-        {
-            if (data.Completed)
-            {
-                data.Packet.Dispose();
-                ((IOCallback<TState>)args[1])(this, data.Packet, (TState)args[2]);
-            }
-            else
-            {
-                var tunnelPacket = new OutputTunnelPacket(this, header, TunnelPacketType.Data, data);
-                Output(tunnelPacket, CompleteNormarlOutput<TState>, args);
-            }
-        }
-
-        void CompleteNormarlOutput<TState>(IPipeline source, IPacket packet, object[] args)
-        {
-            ((IPacket)args[0]).Read(OnNormalRead<TState>, args);
-        }
-
-        void OutputHeader<TState>(PacketData data, object[] args)
-        {
-            if (data.Size != TunnelPacket.HeaderSize) throw new InvalidOperationException("invalid header size.");
-
-            var header = new BufferPacket(this, data.Buffer);
-            header.SetBufferSize(data.Size);
-
-            TransPipeline.Output(header, OnHeaderOutput<TState>, args);
-        }
-
-        void OnHeaderOutput<TState>(IPipeline pipeline, IPacket packet, object[] args)
-        {
-            packet = (IPacket)args[0]; // Data
-            TransPipeline.Output(packet, OnContentOutput<TState>, args);
-        }
-
-        void OnContentOutput<TState>(IPipeline pipeline, IPacket packet, object[] args)
-        {
-            ((IOCallback<TState>)args[1])(this, packet, (TState)args[2]);
+            new TunnelWriter<TState>(this, header, packet, callback, state).Execute();
         }
     }
 }

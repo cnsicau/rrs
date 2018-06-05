@@ -79,6 +79,14 @@ namespace Rrs.Tcp
             {
                 try
                 {
+
+                    Console.Write($"{DateTime.Now:HH:mm:ss.fff} write {data.Size} Bytes:\t");
+                    for (int i = 0; i < data.Size && i < 10; i++)
+                    {
+                        Console.Write("{0, 3:x2}", data.Buffer[i]);
+                    }
+
+                    Console.WriteLine();
                     Stream.BeginWrite(data.Buffer, 0, data.Size, CompleteOutput<TState>, args);
                 }
                 catch (IOException) { Interrupte(); }

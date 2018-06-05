@@ -51,5 +51,17 @@ namespace Rrs
         public bool Completed { get { return size <= 0; } }
 
         public void Dispose() { size = 0; }
+
+
+        /// <summary>
+        /// 转缓冲区包
+        /// </summary>
+        /// <param name="data"></param>
+        public static implicit operator BufferPacket(PacketData data)
+        {
+            var packet = new BufferPacket(data.packet.Source, data.buffer);
+            packet.SetBufferSize(data.size);
+            return packet;
+        }
     }
 }

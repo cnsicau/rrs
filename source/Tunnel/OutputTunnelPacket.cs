@@ -22,19 +22,17 @@ namespace Rrs.Tunnel
             this.header = header;
             this.Length = data?.Size ?? 0;
             this.data = data;
+
+            HeaderSerializer.Serialize((int)type, data?.Size ?? 0, header);
         }
 
         public override void Read<TState>(ReadCallback<TState> callback, TState state = default(TState))
         {
-            data.Dispose();
-            callback(data ?? new PacketData(this), state);
+            var data = new PacketData(this, this.data?.Buffer, this.data?.Size ?? 0);
+            this.data.Dispose();
+            callback(data, state);
         }
 
-        public override void ReadHeader<TState>(ReadCallback<TState> callback, TState state = default(TState))
-        {
-
-            HeaderSerializer.Serialize((int)Type, Length, header);
-            callback(new PacketData(this, header, HeaderSize), state);
-        }
+        public override PacketData HeaderData { get { return new PacketData(this, header, HeaderSize); } }
     }
 }

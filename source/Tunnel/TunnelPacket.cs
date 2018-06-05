@@ -89,12 +89,9 @@ namespace Rrs.Tunnel
         public abstract void Read<TState>(ReadCallback<TState> callback, TState state = default(TState));
 
         /// <summary>
-        /// 读取信息头
+        /// 信息头数据
         /// </summary>
-        /// <typeparam name="TState"></typeparam>
-        /// <param name="callback"></param>
-        /// <param name="state"></param>
-        public abstract void ReadHeader<TState>(ReadCallback<TState> callback, TState state = default(TState));
+        public abstract PacketData HeaderData { get; }
 
         /// <summary>
         /// 释放资源
