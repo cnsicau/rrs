@@ -41,6 +41,7 @@ namespace Rrs
         {
             var size = this.size;
             this.size = NoData;                     // 已读取后，清空缓冲区
+            this.disposed = true;                   // 自动释放
             callback(new PacketData(this, buffer, size), state);
         }
 

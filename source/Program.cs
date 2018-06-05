@@ -20,7 +20,7 @@ namespace Rrs
 
         static void CompleteInput(IPipeline pipeline, IPacket packet, object state)
         {
-            Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} receive { (packet as TunnelPacket)?.Type } {packet?.GetType().Name}.");
+            //Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} receive { (packet as TunnelPacket)?.Type } {packet?.GetType().Name}.");
             packet.Read(CompleteRead, pipeline);
         }
 
@@ -33,18 +33,20 @@ namespace Rrs
             }
             else
             {
-                Console.Write($"{DateTime.Now:HH:mm:ss.fff} read {data.Size}B:\t");
-                for (int i = 0; i < data.Size && i < 10; i++)
-                {
-                    Console.Write("{0, 3:x2}", data.Buffer[i]);
-                }
-                Console.WriteLine();
+                //Console.Write($"{DateTime.Now:HH:mm:ss.fff} read {data.Size}B:\t");
+                //for (int i = 0; i < data.Size && i < 10; i++)
+                //{
+                //    Console.Write("{0, 3:x2}", data.Buffer[i]);
+                //}
+                //Console.WriteLine();
                 data.Packet.Read(CompleteRead, pipeline);
             }
         }
 
         static void OnConnect(IPipeline pipeline, bool success, TunnelPipeline tunnelPipeline)
         {
+            if (success == false) return;
+
             var packet = new BufferPacket(pipeline, new byte[] { 1, 2, 3 });
             packet.SetBufferSize(3);
             tunnelPipeline.Output(packet, CompleteOutput, default(object));
@@ -52,8 +54,8 @@ namespace Rrs
 
         static void CompleteOutput(IPipeline pipeline, IPacket packet, object state)
         {
-            Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} send {(packet as TunnelPacket)?.Type.ToString() ?? "Data" } {packet.GetType().Name}..");
-            Thread.Sleep(1000);
+            //Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} send {(packet as TunnelPacket)?.Type.ToString() ?? "Data" } {packet.GetType().Name}..");
+            Thread.Sleep(10);
             ((BufferPacket)packet).SetBufferSize(3);
             pipeline.Output(packet, CompleteOutput, state);
         }
@@ -64,13 +66,15 @@ namespace Rrs
 
             if (Console.ReadKey().Key == ConsoleKey.Y)
             {
-                Console.Write("\nEnter ssl certificate password: ");
-                var password = ReadPassword();
-                var certificateFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ssl.pfx");
-                var certificate = new X509Certificate2(certificateFile, password, X509KeyStorageFlags.DefaultKeySet);
-                var server = new SslPipelineServer(certificate, IPAddress.Any, 8811, 50);
-                var tunnelServer = new TunnelPipelineServer(server);
-                tunnelServer.Run<object>(Connect);
+                tserver.Http();
+                //Console.Write("\nEnter ssl certificate password: ");
+                //var password = ReadPassword();
+                //var certificateFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ssl.pfx");
+                //var certificate = new X509Certificate2(certificateFile, password, X509KeyStorageFlags.DefaultKeySet);
+                //var server = new SslPipelineServer(certificate, IPAddress.Any, 8811, 50);
+                //var http = new Http.HttpPipelineServer(server);
+                //var tunnelServer = new TunnelPipelineServer(http);
+                //tunnelServer.Run<object>(Connect);
             }
             else
             {

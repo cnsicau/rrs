@@ -7,9 +7,25 @@ namespace Rrs
     /// </summary>
     public class PacketData : IDisposable
     {
+        /// <summary>
+        /// 空包
+        /// </summary>
+        public static readonly PacketData Empty = new PacketData(null, null, 0);
+
         private readonly IPacket packet;
         private readonly byte[] buffer;
         private int size;
+        private PacketData parent = null;
+
+        /// <summary>
+        /// 创建子集数据
+        /// </summary>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        public PacketData CreateSubData(int size)
+        {
+            return new PacketData(packet, buffer, size) { parent = this };
+        }
 
         /// <summary>
         /// 构造
@@ -23,12 +39,6 @@ namespace Rrs
             this.buffer = buffer;
             this.size = size;
         }
-
-        /// <summary>
-        /// 构建空包
-        /// </summary>
-        /// <param name="packet"></param>
-        public PacketData(IPacket packet) { this.packet = packet; }
 
         /// <summary>
         /// 该数据对应的包
@@ -52,6 +62,18 @@ namespace Rrs
 
         public void Dispose() { size = 0; }
 
+        /// <summary>
+        /// 丢弃前端数据
+        /// </summary>
+        /// <param name="count"></param>
+        public void Discard(int count)
+        {
+            if (count <= 0) return;
+
+            size -= count;
+            if (parent != null) parent.Discard(count);
+            else Array.Copy(buffer, count, buffer, 0, size);
+        }
 
         /// <summary>
         /// 转缓冲区包

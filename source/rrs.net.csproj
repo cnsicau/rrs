@@ -35,11 +35,22 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BufferPacket.cs" />
+    <Compile Include="Http\BufferBody.cs" />
+    <Compile Include="Http\DataProviderBody.cs" />
+    <Compile Include="Http\HttpHeader.cs" />
+    <Compile Include="Http\HttpPipeline.cs" />
+    <Compile Include="Http\HttpPipelineServer.cs" />
+    <Compile Include="Http\HttpDataProvider.cs" />
+    <Compile Include="Http\HttpRequest.cs" />
+    <Compile Include="Http\HttpResponse.cs" />
+    <Compile Include="Http\IHttpBody.cs" />
+    <Compile Include="Http\LineCallback.cs" />
     <Compile Include="IOCallback.cs" />
     <Compile Include="IPacket.cs" />
     <Compile Include="IPipeline.cs" />
     <Compile Include="IPipelineServer.cs" />
     <Compile Include="PacketData.cs" />
+    <Compile Include="PacketDataProvider.cs" />
     <Compile Include="PipelineConnector.cs" />
     <Compile Include="ReadCallback.cs" />
     <Compile Include="ConnectCallback.cs" />
@@ -50,6 +61,7 @@
     <Compile Include="Tcp\TcpClientPipeline.cs" />
     <Compile Include="Tcp\TcpPipeline.cs" />
     <Compile Include="Tcp\TcpPipelineServer.cs" />
+    <Compile Include="tserver.cs" />
     <Compile Include="Tunnel\InputTunnelPacket.cs" />
     <Compile Include="Tunnel\HeaderSerializer.cs" />
     <Compile Include="Tunnel\OutputTunnelPacket.cs" />

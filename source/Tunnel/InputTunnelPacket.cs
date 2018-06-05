@@ -44,7 +44,10 @@ namespace Rrs.Tunnel
             HeaderSerializer.Deserialize(header, this);
             // 检查报文有效性
             if (Magic != MagicValue || Version != VersionValue)
+            {
                 trans.Interrupte();
+                return;
+            }
 
             length = Length;
             callback(Source, this, state);
@@ -81,7 +84,7 @@ namespace Rrs.Tunnel
         {
             if (length == 0) // 无数据内容直接返回
             {
-                callback(new PacketData(this), state);
+                callback(PacketData.Empty, state);
                 return;
             }
             if (sourceOffset == sourceSize) // 已读取完加载后续包
