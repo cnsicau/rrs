@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
 namespace Rrs.Http
 {
+    [DebuggerDisplay("{Method,nq} {Uri,nq} {ProtocolVersion,nq}")]
     public class HttpRequest : IPacket
     {
         private IList<HttpHeader> headers;

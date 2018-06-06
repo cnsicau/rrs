@@ -42,7 +42,7 @@ namespace Rrs
             var password = ReadPassword();
             var certificateFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ssl.pfx");
             var certificate = new X509Certificate2(certificateFile, password, X509KeyStorageFlags.DefaultKeySet);
-            var server = new SslPipelineServer(certificate, IPAddress.Any, 8811, 50);
+            var server = new SslPipelineServer(certificate, IPAddress.Any, 443, 50);
             var http = new HttpPipelineServer(server);
             http.Run<object>(Connect, null);
         }
@@ -56,19 +56,19 @@ namespace Rrs
         static void ProcessRequest(IPipeline pipeline, IPacket packet, object state)
         {
             var request = (HttpRequest)packet;
-            var bytes = Encoding.UTF8.GetBytes("HTTP 200 OK\r\n"
+            var str = ("HTTP/1.1 200 OK\r\n"
 + "Transfer-Encoding: chunked\r\n"
 + "\r\n"
-+ request.Uri.Length + "\r\n"
++ request.Uri.Length.ToString("X") + "\r\n"
 + request.Uri + "\r\n"
-+ "\r\n"
 + "0\r\n"
 + "\r\n");
+            var bytes = Encoding.UTF8.GetBytes(str);
             var response = new BufferPacket(pipeline, bytes);
             response.SetBufferSize(bytes.Length);
 
             ((HttpPipeline)pipeline).TransPipeline.Output<object>(response
-                , (a, b, c) => a.Input<object>(ProcessRequest, null), null);
+                , (a, b, c) => pipeline.Input<object>(ProcessRequest, null), null);
         }
     }
 }
